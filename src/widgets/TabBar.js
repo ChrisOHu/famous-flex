@@ -8,9 +8,6 @@
  * @copyright Gloey Apps, 2015
  */
 
-/*global define, console*/
-/*eslint no-use-before-define:0, no-console:0 */
-
 /**
  * TabBar widget for famo.us.
  *
@@ -124,10 +121,12 @@ define(function(require, exports, module) {
             autoPipeEvents: true,
             layout: TabBarLayout,
             flow: true,
-            reflowOnResize: false,
-            nodeSpring: {
-                dampingRatio: 0.8,
-                period: 300
+            flowOptions: {
+                reflowOnResize: false,
+                spring: {
+                    dampingRatio: 0.8,
+                    period: 300
+                }
             }
         }
     };
@@ -153,7 +152,8 @@ define(function(require, exports, module) {
                     target: this,
                     index: index,
                     oldIndex: oldIndex,
-                    item: this._renderables.items[index]
+                    item: this._renderables.items[index],
+                    oldItem: ((oldIndex >= 0) && (oldIndex < this._renderables.items.length)) ? this._renderables.items[oldIndex] : undefined
                 });
             }
         }

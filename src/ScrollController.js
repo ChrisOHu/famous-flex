@@ -5,11 +5,8 @@
  *
  * @author: Hein Rutjes (IjzerenHein)
  * @license MIT
- * @copyright Gloey Apps, 2014
+ * @copyright Gloey Apps, 2014 - 2015
  */
-
-/*global define, console*/
-/*eslint no-use-before-define:0, no-console:0 */
 
 /**
  * Scrollable layout-controller.
@@ -100,14 +97,11 @@ define(function(require, exports, module) {
      * @param {Bool} [options.mouseMove] Enables scrolling by holding the mouse-button down and moving the mouse (default: `false`).
      * @param {Bool} [options.enabled] Enables or disabled user input (default: `true`).
      * @param {Bool} [options.overscroll] Enables or disables overscroll (default: `true`).
-     * @param {Object} [options.nodeSpring] Spring options to use when transitioning renderables between scenes
      * @param {Object} [options.scrollParticle] Options for the scroll particle (default: `{}`)
      * @param {Object} [options.scrollSpring] Spring-force options that are applied on the scroll particle when e.g. bounds is reached (default: `{dampingRatio: 1.0, period: 350}`)
      * @param {Object} [options.scrollDrag] Drag-force options to apply on the scroll particle
      * @param {Object} [options.scrollFriction] Friction-force options to apply on the scroll particle
      * @param {Bool} [options.layoutAll] When set to true, always lays out all renderables in the datasource (default: `false`).
-     * @param {Number} [options.visibleItemThresshold] Thresshold (0..1) used for determining whether an item is considered to be the first/last visible item (default: `0.5`).
-     * @param {Bool} [options.debug] Logs debug output to the console (default: `false`).
      * @alias module:ScrollController
      */
     function ScrollController(options) {
@@ -205,16 +199,12 @@ define(function(require, exports, module) {
     ScrollController.PaginationMode = PaginationMode;
 
     ScrollController.DEFAULT_OPTIONS = {
-        flow: false,
-        //insertSpec: undefined,
-        //removeSpec: undefined,
         useContainer: false,    // when true embeds inside a ContainerSurface for capturing input events & clipping
         container: {
             properties: {
                 overflow: 'hidden' // overflow mode when useContainer is enabled
             }
         },
-        visibleItemThresshold: 0.5, // by default, when an item is 50% visible, it is considered visible by `getFirstVisibleItem`
         scrollParticle: {
             // use defaults
         },
@@ -261,14 +251,11 @@ define(function(require, exports, module) {
      * @param {Bool} [options.mouseMove] Enables scrolling by holding the mouse-button down and moving the mouse (default: `false`).
      * @param {Bool} [options.enabled] Enables or disables user input (default: `true`).
      * @param {Bool} [options.overscroll] Enables or disables overscroll (default: `true`).
-     * @param {Object} [options.nodeSpring] Spring options to use when transitioning renderables between scenes
      * @param {Object} [options.scrollParticle] Options for the scroll particle (default: `{}`)
      * @param {Object} [options.scrollSpring] Spring-force options that are applied on the scroll particle when e.g. bounds is reached (default: `{dampingRatio: 1.0, period: 500}`)
      * @param {Object} [options.scrollDrag] Drag-force options to apply on the scroll particle
      * @param {Object} [options.scrollFriction] Friction-force options to apply on the scroll particle
-     * @param {Number} [options.visibleItemThresshold] Thresshold (0..1) used for determining whether an item is considered to be the first/last visible item (default: `0.5`).
      * @param {Bool} [options.layoutAll] When set to true, always lays out all renderables in the datasource (default: `false`).
-     * @param {Bool} [options.debug] Logs debug output to the console (default: `false`).
      * @return {ScrollController} this
      */
     ScrollController.prototype.setOptions = function(options) {
@@ -294,9 +281,18 @@ define(function(require, exports, module) {
      * is immediately updated when the user scrolls the view.
      */
     function _initLayoutNode(node, spec) {
-        if (!spec && this.options.insertSpec) {
-            node.setSpec(this.options.insertSpec);
+        if (!spec && this.options.flowOptions.insertSpec) {
+            node.setSpec(this.options.flowOptions.insertSpec);
         }
+    }
+
+    /**
+     * Helper that detects when layout is scrolling optimized (default: true).
+     */
+    function _isSequentiallyScrollingOptimized() {
+        return !this._layout.capabilities ||
+                (this._layout.capabilities.sequentialScrollingOptimized === undefined) ||
+                this._layout.capabilities.sequentialScrollingOptimized;
     }
 
     /**
@@ -345,6 +341,13 @@ define(function(require, exports, module) {
     }
 
     /**
+     * Returns the time from the given input event.
+     */
+    function _getEventTimestamp(event) {
+        return event.timeStamp || Date.now();
+    }
+
+    /**
      * Called whenever the user presses the mouse button on the scrollview
      */
     function _mouseDown(event) {
@@ -362,7 +365,7 @@ define(function(require, exports, module) {
 
         // Calculate start of move operation
         var current = [event.clientX, event.clientY];
-        var time = Date.now();
+        var time = _getEventTimestamp(event);
         this._scroll.mouseMove = {
             delta: 0,
             start: current,
@@ -394,7 +397,7 @@ define(function(require, exports, module) {
             this._scroll.mouseMove.current = [event.clientX, event.clientY];
             this._scroll.mouseMove.prevTime = this._scroll.mouseMove.time;
             this._scroll.mouseMove.direction = moveDirection;
-            this._scroll.mouseMove.time = Date.now();
+            this._scroll.mouseMove.time = _getEventTimestamp(event);
         }
 
         // Update scroll-force
@@ -412,7 +415,7 @@ define(function(require, exports, module) {
         // Calculate delta and velocity
         var velocity = 0;
         var diffTime = this._scroll.mouseMove.time - this._scroll.mouseMove.prevTime;
-        if ((diffTime > 0) && ((Date.now() - this._scroll.mouseMove.time) <= this.options.touchMoveNoVelocityDuration)) {
+        if ((diffTime > 0) && ((_getEventTimestamp(event) - this._scroll.mouseMove.time) <= this.options.touchMoveNoVelocityDuration)) {
             var diffOffset = this._scroll.mouseMove.current[this._direction] - this._scroll.mouseMove.prev[this._direction];
             velocity = diffOffset / diffTime;
         }
@@ -472,7 +475,7 @@ define(function(require, exports, module) {
             }
             if (!touchFound) {
                 var current = [changedTouch.clientX, changedTouch.clientY];
-                var time = Date.now();
+                var time = _getEventTimestamp(event);
                 this._scroll.activeTouches.push({
                     id: changedTouch.identifier,
                     start: current,
@@ -524,7 +527,7 @@ define(function(require, exports, module) {
                         touch.current = [changedTouch.clientX, changedTouch.clientY];
                         touch.prevTime = touch.time;
                         touch.direction = moveDirection;
-                        touch.time = Date.now();
+                        touch.time = _getEventTimestamp(event);
                         primaryTouch = (j === 0) ? touch : undefined;
                     }
                 }
@@ -578,7 +581,7 @@ define(function(require, exports, module) {
         // Determine velocity and add to particle
         var velocity = 0;
         var diffTime = primaryTouch.time - primaryTouch.prevTime;
-        if ((diffTime > 0) && ((Date.now() - primaryTouch.time) <= this.options.touchMoveNoVelocityDuration)) {
+        if ((diffTime > 0) && ((_getEventTimestamp(event) - primaryTouch.time) <= this.options.touchMoveNoVelocityDuration)) {
             var diffOffset = primaryTouch.current[this._direction] - primaryTouch.prev[this._direction];
             velocity = diffOffset / diffTime;
         }
@@ -707,16 +710,7 @@ define(function(require, exports, module) {
         // Local data
         var prevHeight = this._calcScrollHeight(false);
         var nextHeight = this._calcScrollHeight(true);
-        var enforeMinSize = this._layout.capabilities && this._layout.capabilities.sequentialScrollingOptimized;
-
-        // 0. Don't set any springs when either next or prev-height could
-        //    not be determined due to true-size renderables.
-        if ((prevHeight === undefined) || (nextHeight === undefined)) {
-            this._scroll.boundsReached = Bounds.NONE;
-            this._scroll.springPosition = undefined;
-            this._scroll.springSource = SpringSource.NONE;
-            return;
-        }
+        var enforeMinSize = _isSequentiallyScrollingOptimized.call(this);
 
         // 1. When the rendered height is smaller than the total height,
         //    then lock to the primary bounds
@@ -848,7 +842,7 @@ define(function(require, exports, module) {
 
         // 3. Update springs
         if (foundNode) {
-            if (this._scroll.ensureVisibleSequence) {
+            if (this._scroll.ensureVisibleRenderNode) {
                 if (this.options.alignment) {
                     if ((scrollToOffset - foundNode.scrollLength) < 0) {
                         this._scroll.springPosition = scrollToOffset;
@@ -859,7 +853,9 @@ define(function(require, exports, module) {
                         this._scroll.springSource = SpringSource.ENSUREVISIBLE;
                     }
                     else {
-                        this._scroll.ensureVisibleRenderNode = undefined;
+                        if (!foundNode.trueSizeRequested) {
+                            this._scroll.ensureVisibleRenderNode = undefined;
+                        }
                     }
                 }
                 else {
@@ -873,7 +869,9 @@ define(function(require, exports, module) {
                         this._scroll.springSource = SpringSource.ENSUREVISIBLE;
                     }
                     else {
-                        this._scroll.ensureVisibleRenderNode = undefined;
+                        if (!foundNode.trueSizeRequested) {
+                          this._scroll.ensureVisibleRenderNode = undefined;
+                        }
                     }
                 }
             }
@@ -1050,7 +1048,7 @@ define(function(require, exports, module) {
             }
 
             // Adjust group offset
-            if (caps && caps.sequentialScrollingOptimized) {
+            if (_isSequentiallyScrollingOptimized.call(this)) {
                 this._scroll.groupStart -= delta;
             }
         }
@@ -1119,98 +1117,104 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Get the first visible item in the view.
-     *
-     * An item is considered to be the first visible item when:
-     * -    First item that is partly visible and the visibility % is higher than `options.visibleItemThresshold`
-     * -    It is the first item after the top/left bounds
-     *
-     * @return {Object} item or `undefined`
+     * Get the first or last visible item in the view.
      */
-    ScrollController.prototype.getFirstVisibleItem = function(includeNode) {
-        var size = this._contextSizeCache;
-        var scrollOffset = this.options.alignment ? (this._scroll.unnormalizedScrollOffset + size[this._direction]) : this._scroll.unnormalizedScrollOffset;
+    function _getVisibleItem(first) {
+        var result = {};
+        var diff;
+        var prevDiff = 10000000;
+        var diffDelta = (first && this.options.alignment) ? -this._contextSizeCache[this._direction] : ((!first && !this.options.alignment) ? this._contextSizeCache[this._direction] : 0);
+        var scrollOffset = this._scroll.unnormalizedScrollOffset;
         var node = this._nodes.getStartEnumNode(true);
-        var nodeFoundVisiblePerc;
-        var nodeFoundScrollOffset;
-        var nodeFound;
         while (node) {
-            if (!node._invalidated || (node.scrollLength === undefined) || (scrollOffset > size[this._direction])) {
+            if (!node._invalidated || (node.scrollLength === undefined)) {
                 break;
             }
-            scrollOffset += node.scrollLength;
-            if ((scrollOffset >= 0) && node._viewSequence) {
-                nodeFoundVisiblePerc = node.scrollLength ? ((Math.min(scrollOffset, size[this._direction]) - Math.max(scrollOffset - node.scrollLength, 0)) / node.scrollLength) : 1;
-                nodeFoundScrollOffset = scrollOffset - node.scrollLength;
-                if ((nodeFoundVisiblePerc >= this.options.visibleItemThresshold) ||
-                    (nodeFoundScrollOffset >= 0)) {
-                    nodeFound = node;
+            if (node._viewSequence) {
+                diff = Math.abs(diffDelta - (scrollOffset + (!first ? node.scrollLength : 0)));
+                if (diff >= prevDiff) {
                     break;
                 }
+                prevDiff = diff;
+                result.scrollOffset = scrollOffset;
+                result._node = node;
+                scrollOffset += node.scrollLength;
             }
             node = node._next;
         }
-        scrollOffset = this.options.alignment ? (this._scroll.unnormalizedScrollOffset + size[this._direction]) : this._scroll.unnormalizedScrollOffset;
+        scrollOffset = this._scroll.unnormalizedScrollOffset;
         node = this._nodes.getStartEnumNode(false);
         while (node) {
-            if (!node._invalidated || (node.scrollLength === undefined) || (scrollOffset < 0)) {
+            if (!node._invalidated || (node.scrollLength === undefined)) {
                 break;
             }
-            scrollOffset -= node.scrollLength;
-            if ((scrollOffset < size[this._direction]) && node._viewSequence) {
-                var visiblePerc = node.scrollLength ? ((Math.min(scrollOffset + node.scrollLength, size[this._direction]) - Math.max(scrollOffset, 0)) / node.scrollLength) : 1;
-                if ((visiblePerc >= this.options.visibleItemThresshold) ||
-                    (scrollOffset >= 0)) {
-                    nodeFoundVisiblePerc = visiblePerc;
-                    nodeFoundScrollOffset = scrollOffset;
-                    nodeFound = node;
+            if (node._viewSequence) {
+                scrollOffset -= node.scrollLength;
+                diff = Math.abs(diffDelta - (scrollOffset + (!first ? node.scrollLength : 0)));
+                if (diff >= prevDiff) {
                     break;
                 }
+                prevDiff = diff;
+                result.scrollOffset = scrollOffset;
+                result._node = node;
             }
             node = node._prev;
         }
-        return nodeFound ? {
-            index: nodeFound._viewSequence.getIndex(),
-            viewSequence: nodeFound._viewSequence,
-            renderNode: nodeFound.renderNode,
-            visiblePerc: nodeFoundVisiblePerc,
-            scrollOffset: nodeFoundScrollOffset,
-            scrollLength: nodeFound.scrollLength,
-            _node: nodeFound
-        } : undefined;
+        if (!result._node) {
+            return undefined;
+        }
+        result.scrollLength = result._node.scrollLength;
+        if (this.options.alignment) {
+            result.visiblePerc = (Math.min(result.scrollOffset + result.scrollLength, 0) - Math.max(result.scrollOffset, -this._contextSizeCache[this._direction])) / result.scrollLength;
+        }
+        else {
+            result.visiblePerc = (Math.min(result.scrollOffset + result.scrollLength, this._contextSizeCache[this._direction]) - Math.max(result.scrollOffset, 0)) / result.scrollLength;
+        }
+        result.index = result._node._viewSequence.getIndex();
+        result.viewSequence = result._node._viewSequence;
+        result.renderNode = result._node.renderNode;
+        return result;
+    }
+
+    /**
+     * Get the first visible item in the view.
+     *
+     * @return {Object} item or `undefined`
+     */
+    ScrollController.prototype.getFirstVisibleItem = function() {
+        return _getVisibleItem.call(this, true);
     };
 
     /**
      * Get the last visible item in the view.
      *
-     * An item is considered to be the last visible item when:
-     * -    Last item that is partly visible and the visibility % is higher than `options.visibleItemThresshold`
-     * -    It is the last item before the bottom/right bounds
-     *
      * @return {Object} item or `undefined`
      */
     ScrollController.prototype.getLastVisibleItem = function() {
-        var items = this.getVisibleItems();
-        var size = this._contextSizeCache;
-        for (var i = items.length - 1; i >= 0; i--) {
-            var item = items[i];
-            if ((item.visiblePerc >= this.options.visibleItemThresshold) ||
-                ((item.scrollOffset + item.scrollLength) <= size[this._direction])) {
-                return item;
-            }
-        }
-        return items.length ? items[items.length - 1] : undefined;
+        return _getVisibleItem.call(this, false);
     };
 
     /**
-     * Helper function that scrolls the view towards a view-sequence node.
+     * Helper function that goes to a view-sequence either by scrolling
+     * or immediately without any scrolling animation.
      */
-    function _scrollToSequence(viewSequence, next) {
-        this._scroll.scrollToSequence = viewSequence;
-        this._scroll.scrollToRenderNode = viewSequence.get();
-        this._scroll.ensureVisibleRenderNode = undefined;
-        this._scroll.scrollToDirection = next;
-        this._scroll.scrollDirty = true;
+    function _goToSequence(viewSequence, next, noAnimation) {
+        if (noAnimation) {
+            this._viewSequence = viewSequence;
+            this._scroll.springPosition = undefined;
+            _updateSpring.call(this);
+            this.halt();
+            this._scroll.scrollDelta = 0;
+            _setParticle.call(this, 0, 0, '_goToSequence');
+            this._isDirty = true;
+        }
+        else {
+            this._scroll.scrollToSequence = viewSequence;
+            this._scroll.scrollToRenderNode = viewSequence.get();
+            this._scroll.ensureVisibleRenderNode = undefined;
+            this._scroll.scrollToDirection = next;
+            this._scroll.scrollDirty = true;
+        }
     }
 
     /**
@@ -1228,14 +1232,15 @@ define(function(require, exports, module) {
      * Moves to the next node in the viewSequence.
      *
      * @param {Number} [amount] Amount of nodes to move
+     * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      */
-    function _goToPage(amount) {
+    function _goToPage(amount, noAnimation) {
 
         // Get current scroll-position. When a previous call was made to
         // `scroll' or `scrollTo` and that node has not yet been reached, then
         // the amount is accumalated onto that scroll target.
-        var viewSequence = this._scroll.scrollToSequence || this._viewSequence;
-        if (!this._scroll.scrollToSequence) {
+        var viewSequence = (!noAnimation ? this._scroll.scrollToSequence : undefined) || this._viewSequence;
+        if (!this._scroll.scrollToSequence && !noAnimation) {
             var firstVisibleItem = this.getFirstVisibleItem();
             if (firstVisibleItem) {
                 viewSequence = firstVisibleItem.viewSequence;
@@ -1259,17 +1264,18 @@ define(function(require, exports, module) {
                 break;
             }
         }
-        _scrollToSequence.call(this, viewSequence, amount >= 0);
+        _goToSequence.call(this, viewSequence, amount >= 0, noAnimation);
     }
 
     /**
-     * Scroll to the first page, making it visible.
+     * Goes to the first page, making it visible.
      *
      * NOTE: This function does not work on ViewSequences that have the `loop` property enabled.
      *
+     * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToFirstPage = function() {
+    ScrollController.prototype.goToFirstPage = function(noAnimation) {
         if (!this._viewSequence) {
             return this;
         }
@@ -1287,38 +1293,41 @@ define(function(require, exports, module) {
                 break;
             }
         }
-        _scrollToSequence.call(this, viewSequence, false);
+        _goToSequence.call(this, viewSequence, false, noAnimation);
         return this;
     };
 
     /**
-     * Scroll to the previous page, making it visible.
+     * Goes to the previous page, making it visible.
      *
+     * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToPreviousPage = function() {
-        _goToPage.call(this, -1);
+    ScrollController.prototype.goToPreviousPage = function(noAnimation) {
+        _goToPage.call(this, -1, noAnimation);
         return this;
     };
 
     /**
-     * Scroll to the next page, making it visible.
+     * Goes to the next page, making it visible.
      *
+     * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToNextPage = function() {
-        _goToPage.call(this, 1);
+    ScrollController.prototype.goToNextPage = function(noAnimation) {
+        _goToPage.call(this, 1, noAnimation);
         return this;
     };
 
     /**
-     * Scroll to the last page, making it visible.
+     * Goes to the last page, making it visible.
      *
      * NOTE: This function does not work on ViewSequences that have the `loop` property enabled.
      *
+     * @param {Bool} [noAnimation] When set to true, immediately shows the node without any scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToLastPage = function() {
+    ScrollController.prototype.goToLastPage = function(noAnimation) {
         if (!this._viewSequence) {
             return this;
         }
@@ -1336,17 +1345,18 @@ define(function(require, exports, module) {
                 break;
             }
         }
-        _scrollToSequence.call(this, viewSequence, true);
+        _goToSequence.call(this, viewSequence, true, noAnimation);
         return this;
     };
 
     /**
-     * Scroll to the given renderable in the datasource.
+     * Goes to the given renderable in the datasource.
      *
      * @param {RenderNode} node renderable to scroll to.
+     * @param {Bool} [noAnimation] When set to true, immediately shows the node without scrolling animation.
      * @return {ScrollController} this
      */
-    ScrollController.prototype.goToRenderNode = function(node) {
+    ScrollController.prototype.goToRenderNode = function(node, noAnimation) {
 
         // Verify arguments and state
         if (!this._viewSequence || !node) {
@@ -1356,7 +1366,7 @@ define(function(require, exports, module) {
         // Check current node
         if (this._viewSequence.get() === node) {
             var next = _calcScrollOffset.call(this) >= 0;
-            _scrollToSequence.call(this, this._viewSequence, next);
+            _goToSequence.call(this, this._viewSequence, next, noAnimation);
             return this;
         }
 
@@ -1368,12 +1378,12 @@ define(function(require, exports, module) {
         while ((nextSequence || prevSequence) && (nextSequence !== this._viewSequence)){
             var nextNode = nextSequence ? nextSequence.get() : undefined;
             if (nextNode === node) {
-                _scrollToSequence.call(this, nextSequence, true);
+                _goToSequence.call(this, nextSequence, true, noAnimation);
                 break;
             }
             var prevNode = prevSequence ? prevSequence.get() : undefined;
             if (prevNode === node) {
-                _scrollToSequence.call(this, prevSequence, false);
+                _goToSequence.call(this, prevSequence, false, noAnimation);
                 break;
             }
             nextSequence = nextNode ? nextSequence.getNext() : undefined;
@@ -1537,6 +1547,15 @@ define(function(require, exports, module) {
     };
 
     /**
+     * Get the current energy of the scrolling particle.
+     *
+     * @return {Number} Energy
+     */
+    ScrollController.prototype.getEnergy = function() {
+        return this._scroll.particle.getEnergy();
+    };
+
+    /**
      * Set the scrolling velocity.
      *
      * @param {Number} velocity New scroll velocity
@@ -1562,10 +1581,15 @@ define(function(require, exports, module) {
     ScrollController.prototype.applyScrollForce = function(delta) {
         this.halt();
         if (this._scroll.scrollForceCount === 0) {
-            this._scroll.scrollForceStartItem = this.alignment ? this.getLastVisibleItem() : this.getFirstVisibleItem();
+            this._scroll.scrollForceStartItem = this.options.alignment ? this.getLastVisibleItem() : this.getFirstVisibleItem();
         }
         this._scroll.scrollForceCount++;
         this._scroll.scrollForce += delta;
+        this._eventOutput.emit((this._scroll.scrollForceCount === 1) ? 'swipestart' : 'swipeupdate', {
+            target: this,
+            total: this._scroll.scrollForce,
+            delta: delta
+        });
         return this;
     };
 
@@ -1584,6 +1608,11 @@ define(function(require, exports, module) {
         this.halt();
         newDelta -= prevDelta;
         this._scroll.scrollForce += newDelta;
+        this._eventOutput.emit('swipeupdate', {
+            target: this,
+            total: this._scroll.scrollForce,
+            delta: newDelta
+        });
         return this;
     };
 
@@ -1606,29 +1635,43 @@ define(function(require, exports, module) {
             this._scroll.scrollForce = 0;
             this._scroll.scrollDirty = true;
             if (this._scroll.scrollForceStartItem && this.options.paginated && (this.options.paginationMode === PaginationMode.PAGE)) {
-                var item = this.alignment ? this.getLastVisibleItem() : this.getFirstVisibleItem();
-                if (item.renderNode !== this._scroll.scrollForceStartItem.renderNode) {
-                    this.goToRenderNode(item.renderNode);
-                }
-                else if (this.options.paginationEnergyThresshold && (Math.abs(this._scroll.particle.getEnergy()) >= this.options.paginationEnergyThresshold)) {
-                    velocity = velocity || 0;
-                    if ((velocity < 0) && item._node._next && item._node._next.renderNode) {
-                        this.goToRenderNode(item._node._next.renderNode);
+                var item = this.options.alignment ? this.getLastVisibleItem(true) : this.getFirstVisibleItem(true);
+                if (item) {
+                    if (item.renderNode !== this._scroll.scrollForceStartItem.renderNode) {
+                        this.goToRenderNode(item.renderNode);
                     }
-                    else if ((velocity >= 0) && item._node._prev && item._node._prev.renderNode) {
-                        this.goToRenderNode(item._node._prev.renderNode);
+                    else if (this.options.paginationEnergyThresshold && (Math.abs(this._scroll.particle.getEnergy()) >= this.options.paginationEnergyThresshold)) {
+                        velocity = velocity || 0;
+                        if ((velocity < 0) && item._node._next && item._node._next.renderNode) {
+                            this.goToRenderNode(item._node._next.renderNode);
+                        }
+                        else if ((velocity >= 0) && item._node._prev && item._node._prev.renderNode) {
+                            this.goToRenderNode(item._node._prev.renderNode);
+                        }
                     }
-                }
-                else {
-                    this.goToRenderNode(item.renderNode);
+                    else {
+                        this.goToRenderNode(item.renderNode);
+                    }
                 }
             }
             this._scroll.scrollForceStartItem = undefined;
+            this._scroll.scrollForceCount--;
+            this._eventOutput.emit('swipeend', {
+                target: this,
+                total: delta,
+                delta: 0,
+                velocity: velocity
+            });
         }
         else {
             this._scroll.scrollForce -= delta;
+            this._scroll.scrollForceCount--;
+            this._eventOutput.emit('swipeupdate', {
+                target: this,
+                total: this._scroll.scrollForce,
+                delta: delta
+            });
         }
-        this._scroll.scrollForceCount--;
         return this;
     };
 
@@ -1642,7 +1685,7 @@ define(function(require, exports, module) {
      */
     ScrollController.prototype.getSpec = function(node, normalize) {
         var spec = LayoutController.prototype.getSpec.apply(this, arguments);
-        if (spec && this._layout.capabilities && this._layout.capabilities.sequentialScrollingOptimized) {
+        if (spec && _isSequentiallyScrollingOptimized.call(this)) {
             spec = {
                 origin: spec.origin,
                 align: spec.align,
@@ -1703,10 +1746,14 @@ define(function(require, exports, module) {
         }
 
         // Mark non-invalidated nodes for removal
-        this._nodes.removeNonInvalidatedNodes(this.options.removeSpec);
+        this._nodes.removeNonInvalidatedNodes(this.options.flowOptions.removeSpec);
 
         // Check whether the bounds have been reached
+        //var oldBoundsReached = this._scroll.boundsReached;
         _calcBounds.call(this, size, scrollOffset);
+        //if (oldBoundsReached !== this._scroll.boundsReached) {
+        //    _log.call(this, 'bounds reached changed (', oldBoundsReached, ' != ', this._scroll.boundsReached, ')');
+        //}
 
         // Update scroll-to spring
         _calcScrollToOffset.call(this, size, scrollOffset);
@@ -1733,6 +1780,22 @@ define(function(require, exports, module) {
         // Cleanup any nodes in case of a VirtualViewSequence
         this._nodes.removeVirtualViewSequenceNodes();
 
+        // Calculate scroll-length and use that as the true-size (height)
+        if (this.options.size && (this.options.size[this._direction] === true)) {
+            var scrollLength = 0;
+            var node = this._nodes.getStartEnumNode();
+            while (node) {
+                if (node._invalidated && node.scrollLength) {
+                    scrollLength += node.scrollLength;
+                }
+                node = node._next;
+            }
+            this._size = this._size || [0, 0];
+            this._size[0] = this.options.size[0];
+            this._size[1] = this.options.size[1];
+            this._size[this._direction] = scrollLength;
+        }
+
         return scrollOffset;
     }
 
@@ -1742,7 +1805,16 @@ define(function(require, exports, module) {
     function _innerRender() {
         var specs = this._specs;
         for (var i3 = 0, j3 = specs.length; i3 < j3; i3++) {
-            specs[i3].target = specs[i3].renderNode.render();
+            if (specs[i3].renderNode) {
+                specs[i3].target = specs[i3].renderNode.render();
+            }
+        }
+
+        // Add our cleanup-registration id also to the list, so that the
+        // cleanup function is called by famo.us when the LayoutController is
+        // removed from the render-tree.
+        if (!specs.length || (specs[specs.length-1] !== this._cleanupRegistration)) {
+            specs.push(this._cleanupRegistration);
         }
         return specs;
     }
@@ -1761,6 +1833,13 @@ define(function(require, exports, module) {
 
         // Update debug info
         this._debug.commitCount++;
+
+        // Reset the flow-state when requested
+        if (this._resetFlowState) {
+            this._resetFlowState = false;
+            this._isDirty = true;
+            this._nodes.removeAll();
+        }
 
         // Calculate scroll offset
         var scrollOffset = _calcScrollOffset.call(this, true, true);
@@ -1785,8 +1864,8 @@ define(function(require, exports, module) {
                 target: this,
                 oldSize: this._contextSizeCache,
                 size: size,
-                oldScrollOffset: this._scrollOffsetCache,
-                scrollOffset: scrollOffset
+                oldScrollOffset: -(this._scrollOffsetCache + this._scroll.groupStart),
+                scrollOffset: -(scrollOffset + this._scroll.groupStart)
             };
 
             // When scroll-offset has changed, emit scroll-start and scroll events
@@ -1807,12 +1886,12 @@ define(function(require, exports, module) {
             // disable the locked state of the layout-nodes so that they
             // can freely transition between the old and new state.
             if (this.options.flow && (this._isDirty ||
-                (this.options.reflowOnResize &&
+                (this.options.flowOptions.reflowOnResize &&
                 ((size[0] !== this._contextSizeCache[0]) ||
                  (size[1] !== this._contextSizeCache[1]))))) {
                 var node = this._nodes.getStartEnumNode();
                 while (node) {
-                    node.releaseLock();
+                    node.releaseLock(true);
                     node = node._next;
                 }
             }
@@ -1828,8 +1907,7 @@ define(function(require, exports, module) {
             this._scrollOffsetCache = scrollOffset;
 
             // Emit end event
-            eventData.scrollOffset = this._scrollOffsetCache;
-            this._eventOutput.emit('layoutend', eventData);
+            eventData.scrollOffset = -(this._scrollOffsetCache + this._scroll.groupStart);
         }
         else if (this._scroll.isScrolling && !this._scroll.scrollForceCount) {
             emitEndScrollingEvent = true;
@@ -1841,9 +1919,15 @@ define(function(require, exports, module) {
         groupTranslate[1] = 0;
         groupTranslate[2] = 0;
         groupTranslate[this._direction] = -this._scroll.groupStart - scrollOffset;
-        var sequentialScrollingOptimized = this._layout.capabilities ? this._layout.capabilities.sequentialScrollingOptimized : false;
+        var sequentialScrollingOptimized = _isSequentiallyScrollingOptimized.call(this);
         var result = this._nodes.buildSpecAndDestroyUnrenderedNodes(sequentialScrollingOptimized ? groupTranslate : undefined);
         this._specs = result.specs;
+        if (!this._specs.length) {
+          this._scroll.groupStart = 0;
+        }
+        if (eventData) { // eventData is only used here to check whether there has been a re-layout
+            this._eventOutput.emit('layoutend', eventData);
+        }
         if (result.modified) {
             this._eventOutput.emit('reflow', {
                 target: this
@@ -1880,8 +1964,8 @@ define(function(require, exports, module) {
                 target: this,
                 oldSize: size,
                 size: size,
-                oldScrollOffset: scrollOffset,
-                scrollOffset: scrollOffset
+                oldScrollOffset: -(this._scroll.groupStart + scrollOffset),
+                scrollOffset: -(this._scroll.groupStart + scrollOffset)
             };
             this._eventOutput.emit('scrollend', eventData);
         }

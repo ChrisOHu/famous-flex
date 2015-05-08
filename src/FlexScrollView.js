@@ -5,11 +5,8 @@
  *
  * @author: Hein Rutjes (IjzerenHein)
  * @license MIT
- * @copyright Gloey Apps, 2014
+ * @copyright Gloey Apps, 2015
  */
-
-/*global define, console*/
-/*eslint no-use-before-define:0, no-console:0 */
 
 /**
  * Flexible FlexScrollView for famo.us.
@@ -65,6 +62,8 @@ define(function(require, exports, module) {
     FlexScrollView.prototype = Object.create(ScrollController.prototype);
     FlexScrollView.prototype.constructor = FlexScrollView;
     FlexScrollView.PullToRefreshState = PullToRefreshState;
+    FlexScrollView.Bounds = ScrollController.Bounds;
+    FlexScrollView.PaginationMode = ScrollController.PaginationMode;
 
     FlexScrollView.DEFAULT_OPTIONS = {
         layout: ListLayout,         // sequential layout, uses width/height from renderable
@@ -151,7 +150,7 @@ define(function(require, exports, module) {
      *
      * @return {Number} The current index of the ViewSequence
      */
-    FlexScrollView.prototype.getCurrentIndex = function getCurrentIndex() {
+    FlexScrollView.prototype.getCurrentIndex = function() {
         var item = this.getFirstVisibleItem();
         return item ? item.viewSequence.getIndex() : -1;
     };
@@ -161,9 +160,10 @@ define(function(require, exports, module) {
      * for compatibility with the stock famo.us Scrollview.
      *
      * @param {Number} index view-sequence index to go to.
+     * @param {Bool} [noAnimation] When set to true, immediately shows the node without scrolling animation.
      * @return {FlexScrollView} this
      */
-    FlexScrollView.prototype.goToPage = function goToPage(index) {
+    FlexScrollView.prototype.goToPage = function(index, noAnimation) {
         var viewSequence = this._viewSequence;
         if (!viewSequence) {
             return this;
@@ -180,7 +180,7 @@ define(function(require, exports, module) {
                 return this;
             }
         }
-        this.goToRenderNode(viewSequence.get());
+        this.goToRenderNode(viewSequence.get(), noAnimation);
         return this;
     };
 
@@ -210,6 +210,17 @@ define(function(require, exports, module) {
      * in pixels translated.
      */
     FlexScrollView.prototype.getPosition = FlexScrollView.prototype.getOffset;
+
+    /**
+     * Returns the absolute position associated with the Scrollview instance.
+     *
+     * This function is a shim provided for compatibility with the stock famo.us Scrollview.
+     *
+     * @return {number} The position of the Scrollview's current Node, in pixels translated.
+     */
+    FlexScrollView.prototype.getAbsolutePosition = function() {
+        return -(this._scrollOffsetCache + this._scroll.groupStart);
+    };
 
     /**
      * Helper function for setting the pull-to-refresh status.

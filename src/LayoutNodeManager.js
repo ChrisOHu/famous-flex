@@ -5,11 +5,8 @@
  *
  * @author: Hein Rutjes (IjzerenHein)
  * @license MIT
- * @copyright Gloey Apps, 2014
+ * @copyright Gloey Apps, 2014 - 2015
  */
-
-/*global define*/
-/*eslint no-use-before-define:0 */
 
 /**
  * LayoutNodeManager is a private class used internally by LayoutController, ScrollController
@@ -112,6 +109,7 @@ define(function(require, exports, module) {
         contextState.prevSetIndex = 0;
         contextState.addCount = 0;
         contextState.removeCount = 0;
+        contextState.lastRenderNode = undefined;
 
         // Prepare content
         context.size[0] = contextData.size[0];
@@ -173,7 +171,6 @@ define(function(require, exports, module) {
         while (node) {
             var modified = node._specModified;
             var spec = node.getSpec();
-            //if (spec.removed && (!this._contextState.addCount || (this._contextState.removeCount > 5))) {
             if (spec.removed) {
 
                 // Destroy node
@@ -194,6 +191,13 @@ define(function(require, exports, module) {
                         spec.transform[14] += translate[2];
                         spec.transform[12] = Math.round(spec.transform[12] * 100000) / 100000;
                         spec.transform[13] = Math.round(spec.transform[13] * 100000) / 100000;
+                        if (spec.endState) {
+                            spec.endState.transform[12] += translate[0];
+                            spec.endState.transform[13] += translate[1];
+                            spec.endState.transform[14] += translate[2];
+                            spec.endState.transform[12] = Math.round(spec.endState.transform[12] * 100000) / 100000;
+                            spec.endState.transform[13] = Math.round(spec.endState.transform[13] * 100000) / 100000;
+                        }
                     }
                     result.modified = true;
                 }
@@ -301,6 +305,19 @@ define(function(require, exports, module) {
             this._initLayoutNodeFn.call(this, node, spec);
         }
         return node;
+    };
+
+    /**
+     * Removes all nodes.
+     */
+    LayoutNodeManager.prototype.removeAll = function() {
+        var node = this._first;
+        while (node) {
+          var next = node._next;
+          _destroyNode.call(this, node);
+          node = next;
+        }
+        this._first = undefined;
     };
 
     /**
@@ -520,6 +537,10 @@ define(function(require, exports, module) {
         if (!this._context.reverse) {
             this._contextState.nextSequence = this._contextState.nextSequence.getNext();
         }
+        if (this._contextState.lastRenderNode === renderNode) {
+          throw 'ViewSequence is corrupted, should never contain the same renderNode twice, index: ' + nextSequence.getIndex();
+        }
+        this._contextState.lastRenderNode = renderNode;
         return {
             renderNode: renderNode,
             viewSequence: nextSequence,
@@ -552,6 +573,10 @@ define(function(require, exports, module) {
         if (this._context.reverse) {
             this._contextState.prevSequence = this._contextState.prevSequence.getPrevious();
         }
+        if (this._contextState.lastRenderNode === renderNode) {
+          throw 'ViewSequence is corrupted, should never contain the same renderNode twice, index: ' + prevSequence.getIndex();
+        }
+        this._contextState.lastRenderNode = renderNode;
         return {
             renderNode: renderNode,
             viewSequence: prevSequence,
@@ -657,6 +682,10 @@ define(function(require, exports, module) {
         if (configSize && ((configSize[0] === true) || (configSize[1] === true))) {
             contextNode.usesTrueSize = true;
             var backupSize = renderNode._backupSize;
+            if (renderNode._contentDirty || renderNode._trueSizeCheck) {
+              this._trueSizeRequested = true;
+              contextNode.trueSizeRequested = true;
+            }
             if (renderNode._trueSizeCheck) {
 
                 // Fix for true-size renderables. When true-size is used, the size
@@ -667,19 +696,11 @@ define(function(require, exports, module) {
                 if (backupSize && (configSize !== size)) {
                     var newWidth = (configSize[0] === true) ? Math.max(backupSize[0], size[0]) : size[0];
                     var newHeight = (configSize[1] === true) ? Math.max(backupSize[1], size[1]) : size[1];
-                    if ((newWidth !== backupSize[0]) || (newHeight !== backupSize[1])) {
-                        this._trueSizeRequested = true;
-                        contextNode.trueSizeRequested = true;
-                    }
                     backupSize[0] = newWidth;
                     backupSize[1] = newHeight;
                     size = backupSize;
                     renderNode._backupSize = undefined;
                     backupSize = undefined;
-                }
-                else {
-                    this._trueSizeRequested = true;
-                    contextNode.trueSizeRequested = true;
                 }
             }
             if (this._reevalTrueSize || (backupSize && ((backupSize[0] !== size[0]) || (backupSize[1] !== size[1])))) {

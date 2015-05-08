@@ -7,3 +7,6 @@
 - Jeduan Cornejo (jeduan)
 - Sidney Bofah (SidneyS)
 - Avi Haiat (thaiat)
+- Gadi Cohen (gadicc)
+- Mark Wheeler (mhwheeler)
+- Nicholas Reed (nicholasareed)

@@ -5,11 +5,11 @@
  *
  * @author: Hein Rutjes (IjzerenHein)
  * @license MIT
- * @copyright Gloey Apps, 2014
+ * @copyright Gloey Apps, 2014 - 2015
  */
 
-/*global define*/
-/*eslint no-use-before-define:0 */
+/*global console*/
+/*eslint no-console: 0*/
 
 /**
  * LayoutController lays out renderables according to a layout-
@@ -46,11 +46,14 @@ define(function(require, exports, module) {
      * @param {Function|Object} [options.layout] Layout function or layout-literal.
      * @param {Object} [options.layoutOptions] Options to pass in to the layout-function.
      * @param {Array|ViewSequence|Object} [options.dataSource] Array, ViewSequence or Object with key/value pairs.
-     * @param {Utility.Direction} [options.direction] Direction to layout into (e.g. Utility.Direction.Y) (when ommited the default direction of the layout is used)
+     * @param {Utility.Direction} [options.direction] Direction to layout into (e.g. Utility.Direction.Y) (when omitted the default direction of the layout is used)
      * @param {Bool} [options.flow] Enables flow animations when the layout changes (default: `false`).
-     * @param {Bool} [options.reflowOnResize] Smoothly reflows renderables on resize (only used when flow = true) (default: `true`).
-     * @param {Spec} [options.insertSpec] Size, transform, opacity... to use when inserting new renderables into the scene (default: `{}`).
-     * @param {Spec} [options.removeSpec] Size, transform, opacity... to use when removing renderables from the scene (default: `{}`).
+     * @param {Object} [options.flowOptions] Options used by nodes when reflowing.
+     * @param {Bool} [options.flowOptions.reflowOnResize] Smoothly reflows renderables on resize (only used when flow = true) (default: `true`).
+     * @param {Object} [options.flowOptions.spring] Spring options used by nodes when reflowing (default: `{dampingRatio: 0.8, period: 300}`).
+     * @param {Object} [options.flowOptions.properties] Properties which should be enabled or disabled for flowing.
+     * @param {Spec} [options.flowOptions.insertSpec] Size, transform, opacity... to use when inserting new renderables into the scene (default: `{}`).
+     * @param {Spec} [options.flowOptions.removeSpec] Size, transform, opacity... to use when removing renderables from the scene (default: `{}`).
      * @param {Bool} [options.alwaysLayout] When set to true, always calls the layout function on every render-cycle (default: `false`).
      * @param {Bool} [options.autoPipeEvents] When set to true, automatically calls .pipe on all renderables when inserted (default: `false`).
      * @param {Object} [options.preallocateNodes] Optimisation option to improve initial scrolling/animation performance by pre-allocating nodes, e.g.: `{count: 50, spec: {size:[0, 0], transform: Transform.identity}}`.
@@ -63,6 +66,21 @@ define(function(require, exports, module) {
         this._isDirty = true;
         this._contextSizeCache = [0, 0];
         this._commitOutput = {};
+
+        // Create an object to we can capture the famo.us cleanup call on
+        // LayoutController.
+        this._cleanupRegistration = {
+          commit: function() {
+              return undefined;
+          },
+          cleanup: function(context) {
+              this.cleanup(context);
+          }.bind(this)
+        };
+        this._cleanupRegistration.target = Entity.register(this._cleanupRegistration);
+        this._cleanupRegistration.render = function() {
+          return this.target;
+        }.bind(this._cleanupRegistration);
 
         // Setup input event handler
         this._eventInput = new EventHandler();
@@ -113,25 +131,38 @@ define(function(require, exports, module) {
     }
 
     LayoutController.DEFAULT_OPTIONS = {
-        nodeSpring: {
-            dampingRatio: 0.8,
-            period: 300
-        },
-        reflowOnResize: true
-        /*insertSpec: {
-            opacity: undefined,
-            size: undefined,
-            transform: undefined,
-            origin: undefined,
-            align: undefined
-        },
-        removeSpec: {
-            opacity: undefined,
-            size: undefined,
-            transform: undefined,
-            origin: undefined,
-            align: undefined
-        }*/
+        flow: false,
+        flowOptions: {
+            reflowOnResize: true,
+            properties: {
+                opacity: true,
+                align: true,
+                origin: true,
+                size: true,
+                translate: true,
+                skew: true,
+                rotate: true,
+                scale: true
+            },
+            spring: {
+                dampingRatio: 0.8,
+                period: 300
+            }
+            /*insertSpec: {
+                opacity: undefined,
+                size: undefined,
+                transform: undefined,
+                origin: undefined,
+                align: undefined
+            },
+            removeSpec: {
+                opacity: undefined,
+                size: undefined,
+                transform: undefined,
+                origin: undefined,
+                align: undefined
+            }*/
+        }
     };
 
     /**
@@ -139,8 +170,8 @@ define(function(require, exports, module) {
      * the node with the `insertSpec` if it has been defined.
      */
     function _initFlowLayoutNode(node, spec) {
-        if (!spec && this.options.insertSpec) {
-            node.setSpec(this.options.insertSpec);
+        if (!spec && this.options.flowOptions.insertSpec) {
+            node.setSpec(this.options.flowOptions.insertSpec);
         }
     }
 
@@ -151,18 +182,57 @@ define(function(require, exports, module) {
      * @param {Function|Object} [options.layout] Layout function or layout-literal.
      * @param {Object} [options.layoutOptions] Options to pass in to the layout-function.
      * @param {Array|ViewSequence|Object} [options.dataSource] Array, ViewSequence or Object with key/value pairs.
-     * @param {Utility.Direction} [options.direction] Direction to layout into (e.g. Utility.Direction.Y) (when ommited the default direction of the layout is used)
-     * @param {Spec} [options.insertSpec] Size, transform, opacity... to use when inserting new renderables into the scene (default: `{}`).
-     * @param {Spec} [options.removeSpec] Size, transform, opacity... to use when removing renderables from the scene (default: `{}`).
+     * @param {Utility.Direction} [options.direction] Direction to layout into (e.g. Utility.Direction.Y) (when omitted the default direction of the layout is used)
+     * @param {Object} [options.flowOptions] Options used by nodes when reflowing.
+     * @param {Bool} [options.flowOptions.reflowOnResize] Smoothly reflows renderables on resize (only used when flow = true) (default: `true`).
+     * @param {Object} [options.flowOptions.spring] Spring options used by nodes when reflowing (default: `{dampingRatio: 0.8, period: 300}`).
+     * @param {Object} [options.flowOptions.properties] Properties which should be enabled or disabled for flowing.
+     * @param {Spec} [options.flowOptions.insertSpec] Size, transform, opacity... to use when inserting new renderables into the scene (default: `{}`).
+     * @param {Spec} [options.flowOptions.removeSpec] Size, transform, opacity... to use when removing renderables from the scene (default: `{}`).
      * @param {Bool} [options.alwaysLayout] When set to true, always calls the layout function on every render-cycle (default: `false`).
-     * @param {Bool} [options.autoPipeEvents] When set to true, automatically calls .pipe on all renderables when inserted (default: `false`).
      * @return {LayoutController} this
      */
-    LayoutController.prototype.setOptions = function setOptions(options) {
+    LayoutController.prototype.setOptions = function(options) {
         if ((options.alignment !== undefined) && (options.alignment !== this.options.alignment)) {
             this._isDirty = true;
         }
         this._optionsManager.setOptions(options);
+        if (options.nodeSpring) {
+            console.warn('nodeSpring options have been moved inside `flowOptions`. Use `flowOptions.spring` instead.');
+            this._optionsManager.setOptions({
+                flowOptions: {
+                    spring: options.nodeSpring
+                }
+            });
+            this._nodes.setNodeOptions(this.options.flowOptions);
+        }
+        if (options.reflowOnResize !== undefined) {
+            console.warn('reflowOnResize options have been moved inside `flowOptions`. Use `flowOptions.reflowOnResize` instead.');
+            this._optionsManager.setOptions({
+                flowOptions: {
+                    reflowOnResize: options.reflowOnResize
+                }
+            });
+            this._nodes.setNodeOptions(this.options.flowOptions);
+        }
+        if (options.insertSpec) {
+            console.warn('insertSpec options have been moved inside `flowOptions`. Use `flowOptions.insertSpec` instead.');
+            this._optionsManager.setOptions({
+                flowOptions: {
+                    insertSpec: options.insertSpec
+                }
+            });
+            this._nodes.setNodeOptions(this.options.flowOptions);
+        }
+        if (options.removeSpec) {
+            console.warn('removeSpec options have been moved inside `flowOptions`. Use `flowOptions.removeSpec` instead.');
+            this._optionsManager.setOptions({
+                flowOptions: {
+                    removeSpec: options.removeSpec
+                }
+            });
+            this._nodes.setNodeOptions(this.options.flowOptions);
+        }
         if (options.dataSource) {
             this.setDataSource(options.dataSource);
         }
@@ -175,10 +245,8 @@ define(function(require, exports, module) {
         if (options.direction !== undefined) {
             this.setDirection(options.direction);
         }
-        if (options.nodeSpring && this.options.flow) {
-            this._nodes.setNodeOptions({
-                spring: options.nodeSpring
-            });
+        if (options.flowOptions && this.options.flow) {
+            this._nodes.setNodeOptions(this.options.flowOptions);
         }
         if (options.preallocateNodes) {
             this._nodes.preallocateNodes(options.preallocateNodes.count || 0, options.preallocateNodes.spec);
@@ -226,12 +294,15 @@ define(function(require, exports, module) {
      */
     LayoutController.prototype.setDataSource = function(dataSource) {
         this._dataSource = dataSource;
+        this._initialViewSequence = undefined;
         this._nodesById = undefined;
         if (dataSource instanceof Array) {
             this._viewSequence = new ViewSequence(dataSource);
+            this._initialViewSequence = this._viewSequence;
         }
         else if ((dataSource instanceof ViewSequence) || dataSource.getNext) {
             this._viewSequence = dataSource;
+            this._initialViewSequence = dataSource;
         }
         else if (dataSource instanceof Object){
             this._nodesById = dataSource;
@@ -404,10 +475,11 @@ define(function(require, exports, module) {
      * Id.
      *
      * @param {Renderable|String} node Renderabe or Id to look for
-     * @param {Bool} normalize When set to `true` normalizes the origin/align into the transform translation (default: `false`).
+     * @param {Bool} [normalize] When set to `true` normalizes the origin/align into the transform translation (default: `false`).
+     * @param {Bool} [endState] When set to `true` returns the flowing end-state spec rather than the current spec.
      * @return {Spec} spec or undefined
      */
-    LayoutController.prototype.getSpec = function(node, normalize) {
+    LayoutController.prototype.getSpec = function(node, normalize, endState) {
         if (!node) {
             return undefined;
         }
@@ -429,6 +501,10 @@ define(function(require, exports, module) {
             for (var i = 0; i < this._specs.length; i++) {
                 var spec = this._specs[i];
                 if (spec.renderNode === node) {
+                    if (endState && spec.endState) {
+                        spec = spec.endState;
+                    }
+                    // normalize align & origin into transform
                     if (normalize && spec.transform && spec.size && (spec.align || spec.origin)) {
                         var transform = spec.transform;
                         if (spec.align && (spec.align[0] || spec.align[1])) {
@@ -461,6 +537,19 @@ define(function(require, exports, module) {
     };
 
     /**
+     * Resets the current flow state, so that all renderables
+     * are immediately displayed in their end-state.
+     *
+     * @return {LayoutController} this
+     */
+    LayoutController.prototype.resetFlowState = function() {
+        if (this.options.flow) {
+            this._resetFlowState = true;
+        }
+        return this;
+    };
+
+    /**
      * Inserts a renderable into the data-source.
      *
      * The optional argument `insertSpec` is only used `flow` mode is enabled.
@@ -485,7 +574,7 @@ define(function(require, exports, module) {
 
             // Insert renderable
             if (this._nodesById[indexOrId] === renderable) {
-                return;
+                return this;
             }
             this._nodesById[indexOrId] = renderable;
         }
@@ -497,10 +586,15 @@ define(function(require, exports, module) {
             if (this._dataSource === undefined) {
                 this._dataSource = [];
                 this._viewSequence = new ViewSequence(this._dataSource);
+                this._initialViewSequence = this._viewSequence;
             }
 
             // Insert into array
             var dataSource = this._viewSequence || this._dataSource;
+            var array = _getDataSourceArray.call(this);
+            if (array && (indexOrId === array.length)) {
+                indexOrId = -1;
+            }
             if (indexOrId === -1) {
                 dataSource.push(renderable);
             }
@@ -558,8 +652,8 @@ define(function(require, exports, module) {
     /**
      * Helper function for finding the view-sequence node at the given position.
      */
-    function _getViewSequenceAtIndex(index) {
-        var viewSequence = this._viewSequence;
+    function _getViewSequenceAtIndex(index, startViewSequence) {
+        var viewSequence = startViewSequence || this._viewSequence;
         var i = viewSequence ? viewSequence.getIndex() : index;
         if (index > i) {
             while (viewSequence) {
@@ -595,6 +689,19 @@ define(function(require, exports, module) {
     }
 
     /**
+     * Helper that return the underlying array datasource if available.
+     */
+    function _getDataSourceArray() {
+      if (Array.isArray(this._dataSource)) {
+        return this._dataSource;
+      }
+      else if (this._viewSequence || this._viewSequence._) {
+        return this._viewSequence._.array;
+      }
+      return undefined;
+    }
+
+    /**
      * Get the renderable at the given index or Id.
      *
      * @param {Number|String} indexOrId Index within dataSource array or id (String)
@@ -611,37 +718,96 @@ define(function(require, exports, module) {
     /**
      * Swaps two renderables at the given positions.
      *
+     * This method is only supported for dataSources of type Array or ViewSequence.
+     *
      * @param {Number} index Index of the renderable to swap
      * @param {Number} index2 Index of the renderable to swap with
      * @return {LayoutController} this
      */
     LayoutController.prototype.swap = function(index, index2) {
-        if (this._viewSequence) {
-            _getViewSequenceAtIndex.call(this, index).swap(_getViewSequenceAtIndex.call(this, index2));
-            this._isDirty = true;
+        var array = _getDataSourceArray.call(this);
+        if (!array) {
+            throw '.swap is only supported for dataSources of type Array or ViewSequence';
         }
+        if (index === index2) {
+          return this;
+        }
+        if ((index < 0) || (index >= array.length)) {
+          throw 'Invalid index (' + index + ') specified to .swap';
+        }
+        if ((index2 < 0) || (index2 >= array.length)) {
+          throw 'Invalid second index (' + index2 + ') specified to .swap';
+        }
+        var renderNode = array[index];
+        array[index] = array[index2];
+        array[index2] = renderNode;
+        this._isDirty = true;
         return this;
     };
 
     /**
-     * Swaps two renderables at the given positions.
+     * Replaces a renderable at the given index or id.
      *
      * @param {Number|String} indexOrId Index within dataSource array or id (String)
      * @param {Renderable} renderable renderable to replace with
-     * @return {Renderable} replaced renderable
+     * @param {Bool} [noAnimation] When set to `true`, replaces the renderable without any flowing animation.
+     * @return {Renderable} old renderable that has been replaced
      */
-    LayoutController.prototype.replace = function(indexOrId, renderable) {
+    LayoutController.prototype.replace = function(indexOrId, renderable, noAnimation) {
         var oldRenderable;
         if (this._nodesById || (indexOrId instanceof String) || (typeof indexOrId === 'string')) {
             oldRenderable = this._nodesById[indexOrId];
-            this._nodesById[indexOrId] = renderable;
-            this._isDirty = true;
+            if (oldRenderable !== renderable) {
+                if (noAnimation && oldRenderable) {
+                    var node = this._nodes.getNodeByRenderNode(oldRenderable);
+                    if (node) {
+                        node.setRenderNode(renderable);
+                    }
+                }
+                this._nodesById[indexOrId] = renderable;
+                this._isDirty = true;
+            }
             return oldRenderable;
         }
-        //var viewSequence = _getViewSequenceAtIndex.call(this, indexOrId);
-        //return viewSequence ? viewSequence.get() : undefined;
-        // TODO - support indexes
-        return undefined;
+        var array = _getDataSourceArray.call(this);
+        if (!array) {
+          return undefined;
+        }
+        if ((indexOrId < 0) || (indexOrId >= array.length)) {
+          throw 'Invalid index (' + indexOrId + ') specified to .replace';
+        }
+        oldRenderable = array[indexOrId];
+        if (oldRenderable !== renderable) {
+          array[indexOrId] = renderable;
+          this._isDirty = true;
+        }
+        return oldRenderable;
+    };
+
+    /**
+     * Moves a renderable to a new index.
+     *
+     * This method is only supported for dataSources of type Array or ViewSequence.
+     *
+     * @param {Number} index Index of the renderable to move.
+     * @param {Number} newIndex New index of the renderable.
+     * @return {LayoutController} this
+     */
+    LayoutController.prototype.move = function(index, newIndex) {
+        var array = _getDataSourceArray.call(this);
+        if (!array) {
+            throw '.move is only supported for dataSources of type Array or ViewSequence';
+        }
+        if ((index < 0) || (index >= array.length)) {
+          throw 'Invalid index (' + index + ') specified to .move';
+        }
+        if ((newIndex < 0) || (newIndex >= array.length)) {
+          throw 'Invalid newIndex (' + newIndex + ') specified to .move';
+        }
+        var item = array.splice(index, 1)[0];
+        array.splice(newIndex, 0, item);
+        this._isDirty = true;
+        return this;
     };
 
     /**
@@ -651,35 +817,69 @@ define(function(require, exports, module) {
      * When specified, the renderable is removed using an animation ending at
      * the size, origin, opacity, transform, etc... as specified in `removeSpec'.
      *
-     * @param {Number|String} indexOrId Index within dataSource array or id (String)
+     * @param {Number|String|Renderable} indexOrId Index, id (String) or renderable to remove.
      * @param {Spec} [removeSpec] Size, transform, etc.. to end with when removing
-     * @return {LayoutController} this
+     * @return {Renderable} renderable that has been removed
      */
     LayoutController.prototype.remove = function(indexOrId, removeSpec) {
+        var renderNode;
 
         // Remove the renderable in case of an id (String)
-        var renderNode;
         if (this._nodesById || (indexOrId instanceof String) || (typeof indexOrId === 'string')) {
 
             // Find and remove renderable from data-source
-            renderNode = this._nodesById[indexOrId];
-            if (renderNode) {
-                delete this._nodesById[indexOrId];
+            if ((indexOrId instanceof String) || (typeof indexOrId === 'string')) {
+                renderNode = this._nodesById[indexOrId];
+                if (renderNode) {
+                    delete this._nodesById[indexOrId];
+                }
+            }
+            else {
+                for (var key in this._nodesById) {
+                    if (this._nodesById[key] === indexOrId) {
+                        delete this._nodesById[key];
+                        renderNode = indexOrId;
+                        break;
+                    }
+                }
             }
         }
 
         // Remove the renderable using an index
-        else {
+        else if ((indexOrId instanceof Number) || (typeof indexOrId === 'number')) {
+            var array = _getDataSourceArray.call(this);
+            if (!array || (indexOrId < 0) || (indexOrId >= array.length)) {
+                throw 'Invalid index (' + indexOrId + ') specified to .remove (or dataSource doesn\'t support remove)';
+            }
+            renderNode = array[indexOrId];
+            this._dataSource.splice(indexOrId, 1);
+        }
 
-            // Remove from array
-            renderNode = this._dataSource.splice(indexOrId, 1)[0];
+        // Remove by renderable
+        else {
+            indexOrId = this._dataSource.indexOf(indexOrId);
+            if (indexOrId >= 0) {
+                this._dataSource.splice(indexOrId, 1);
+                renderNode = indexOrId;
+            }
+        }
+
+        // When a node is removed from the view-sequence, the current this._viewSequence
+        // node may not be part of the valid view-sequence anymore. This seems to be a bug
+        // in the famo.us ViewSequence implementation/concept. The following check was added
+        // to ensure that always a valid viewSequence node is selected into the ScrollView.
+        if (this._viewSequence && renderNode) {
+            var viewSequence = _getViewSequenceAtIndex.call(this, this._viewSequence.getIndex(), this._initialViewSequence);
+            viewSequence = viewSequence || _getViewSequenceAtIndex.call(this, this._viewSequence.getIndex() - 1, this._initialViewSequence);
+            viewSequence = viewSequence || this._dataSource;
+            this._viewSequence = viewSequence;
         }
 
         // When a custom remove-spec was specified, store that in the layout-node
         if (renderNode && removeSpec) {
             var node = this._nodes.getNodeByRenderNode(renderNode);
             if (node) {
-                node.remove(removeSpec || this.options.removeSpec);
+                node.remove(removeSpec || this.options.flowOptions.removeSpec);
             }
         }
 
@@ -688,16 +888,17 @@ define(function(require, exports, module) {
             this._isDirty = true;
         }
 
-        return this;
+        return renderNode;
     };
 
     /**
      * Removes all renderables from the data-source.
      *
-     * The optional argument `removeSpec` is only used `flow` mode is enabled.
-     * When specified, the renderables ares removed using an animation ending at
+     * The optional argument `removeSpec` is only used when `flow` mode is enabled.
+     * When specified, the renderables are removed using an animation ending at
      * the size, origin, opacity, transform, etc... as specified in `removeSpec'.
      *
+     * @param {Spec} [removeSpec] Size, transform, etc.. to end with when removing
      * @return {LayoutController} this
      */
     LayoutController.prototype.removeAll = function(removeSpec) {
@@ -717,7 +918,7 @@ define(function(require, exports, module) {
         if (removeSpec) {
             var node = this._nodes.getStartEnumNode();
             while (node) {
-                node.remove(removeSpec || this.options.removeSpec);
+                node.remove(removeSpec || this.options.flowOptions.removeSpec);
                 node = node._next;
             }
         }
@@ -759,6 +960,13 @@ define(function(require, exports, module) {
         var size = context.size;
         var opacity = context.opacity;
 
+        // Reset the flow-state when requested
+        if (this._resetFlowState) {
+            this._resetFlowState = false;
+            this._isDirty = true;
+            this._nodes.removeAll();
+        }
+
         // When the size or layout function has changed, reflow the layout
         if (size[0] !== this._contextSizeCache[0] ||
             size[1] !== this._contextSizeCache[1] ||
@@ -779,14 +987,24 @@ define(function(require, exports, module) {
             // When the layout has changed, and we are not just scrolling,
             // disable the locked state of the layout-nodes so that they
             // can freely transition between the old and new state.
-            if (this.options.flow && (this._isDirty ||
-                (this.options.reflowOnResize &&
-                ((size[0] !== this._contextSizeCache[0]) ||
-                 (size[1] !== this._contextSizeCache[1]))))) {
-                var node = this._nodes.getStartEnumNode();
-                while (node) {
-                    node.releaseLock();
-                    node = node._next;
+            if (this.options.flow) {
+                var lock = false;
+                if (!this.options.flowOptions.reflowOnResize) {
+                    if (!this._isDirty &&
+                        ((size[0] !== this._contextSizeCache[0]) ||
+                         (size[1] !== this._contextSizeCache[1]))) {
+                        lock = undefined;
+                    }
+                    else {
+                      lock = true;
+                    }
+                }
+                if (lock !== undefined) {
+                    var node = this._nodes.getStartEnumNode();
+                    while (node) {
+                        node.releaseLock(lock);
+                        node = node._next;
+                    }
                 }
             }
 
@@ -818,7 +1036,7 @@ define(function(require, exports, module) {
             }
 
             // Mark non-invalidated nodes for removal
-            this._nodes.removeNonInvalidatedNodes(this.options.removeSpec);
+            this._nodes.removeNonInvalidatedNodes(this.options.flowOptions.removeSpec);
 
             // Cleanup any nodes in case of a VirtualViewSequence
             this._nodes.removeVirtualViewSequenceNodes();
@@ -841,18 +1059,18 @@ define(function(require, exports, module) {
 
             // Update output and optionally emit event
             var result = this._nodes.buildSpecAndDestroyUnrenderedNodes();
+            this._specs = result.specs;
             this._commitOutput.target = result.specs;
+            this._eventOutput.emit('layoutend', eventData);
             this._eventOutput.emit('reflow', {
                 target: this
             });
-
-            // Emit end event
-            this._eventOutput.emit('layoutend', eventData);
         }
         else if (this.options.flow) {
 
             // Update output and optionally emit event
             result = this._nodes.buildSpecAndDestroyUnrenderedNodes();
+            this._specs = result.specs;
             this._commitOutput.target = result.specs;
             if (result.modified) {
                 this._eventOutput.emit('reflow', {
@@ -860,12 +1078,20 @@ define(function(require, exports, module) {
                 });
             }
         }
-        this._specs = this._commitOutput.target;
 
         // Render child-nodes every commit
         var target = this._commitOutput.target;
         for (var i = 0, j = target.length; i < j; i++) {
-            target[i].target = target[i].renderNode.render();
+            if (target[i].renderNode) {
+                target[i].target = target[i].renderNode.render();
+            }
+        }
+
+        // Add our cleanup-registration id also to the list, so that the
+        // cleanup function is called by famo.us when the LayoutController is
+        // removed from the render-tree.
+        if (!target.length || (target[target.length-1] !== this._cleanupRegistration)) {
+            target.push(this._cleanupRegistration);
         }
 
         // Translate dependent on origin
@@ -876,6 +1102,18 @@ define(function(require, exports, module) {
         this._commitOutput.opacity = opacity;
         this._commitOutput.transform = transform;
         return this._commitOutput;
+    };
+
+    /**
+     * Called whenever the layout-controller is removed from the render-tree.
+     *
+     * @private
+     * @param {Context} context cleanup context
+     */
+    LayoutController.prototype.cleanup = function(context) {
+        if (this.options.flow) {
+            this._resetFlowState = true;
+        }
     };
 
     module.exports = LayoutController;

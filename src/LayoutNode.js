@@ -8,9 +8,6 @@
  * @copyright Gloey Apps, 2014
  */
 
-/*global define*/
-/*eslint no-use-before-define:0 */
-
 /**
  * Internal LayoutNode class used by `LayoutController`.
  *
@@ -37,6 +34,14 @@ define(function(require, exports, module) {
         //this.scrollLength = undefined;
         //this.trueSizeRequested = false;
     }
+
+    /**
+     * Called to update the underlying render-node
+     */
+    LayoutNode.prototype.setRenderNode = function(renderNode) {
+        this.renderNode = renderNode;
+        this._spec.renderNode = renderNode;
+    };
 
     /**
      * Called to update the options for the node
@@ -106,7 +111,7 @@ define(function(require, exports, module) {
             }
             else {
                 for (var i = 0; i < 16; i++) {
-                    this._spec.transform[0] = spec.transform[0];
+                    this._spec.transform[i] = spec.transform[i];
                 }
             }
         }

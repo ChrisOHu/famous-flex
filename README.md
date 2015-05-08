@@ -14,9 +14,11 @@ of renderables using a `CollectionLayout`, and change that into a `ListLayout`. 
 ### Demos
 
 - [famous-flex-demo](https://rawgit.com/IjzerenHein/famous-flex-demo/master/dist/index.html) ([source](https://github.com/IjzerenHein/famous-flex-demo))
+- [AnimationController demo](https://rawgit.com/IjzerenHein/famous-flex-animationcontroller/master/dist/index.html) ([source](https://github.com/IjzerenHein/famous-flex-animationcontroller))
 - [Chat demo](https://rawgit.com/IjzerenHein/famous-flex-chat/master/dist/index.html) ([source](https://github.com/IjzerenHein/famous-flex-chat))
 - [DatePicker demo](https://rawgit.com/IjzerenHein/famous-flex-datepicker/master/dist/index.html) ([source](https://github.com/IjzerenHein/famous-flex-datepicker))
 - [TabBar demo](https://rawgit.com/IjzerenHein/famous-flex-tabbar/master/dist/index.html) ([source](https://github.com/IjzerenHein/famous-flex-tabbar))
+- [TabBarController demo](https://rawgit.com/IjzerenHein/famous-flex-tabbarcontroller/master/dist/index.html) ([source](https://github.com/IjzerenHein/famous-flex-tabbarcontroller))
 
 ### Getting started
 - [Installation](#installation)
@@ -30,10 +32,12 @@ of renderables using a `CollectionLayout`, and change that into a `ListLayout`. 
 
 ### Views / widgets
 - [LayoutController](docs/LayoutController.md)
+- [AnimationController](https://github.com/IjzerenHein/famous-flex-animationcontroller/blob/master/tutorial/AnimationController.md)
 - [ScrollController](docs/ScrollController.md)
 - [FlexScrollView](tutorials/FlexScrollView.md)
 - [DatePicker](https://github.com/IjzerenHein/famous-flex-datepicker/blob/master/tutorial/DatePicker.md)
 - [TabBar](https://github.com/IjzerenHein/famous-flex-tabbar/blob/master/tutorial/TabBar.md)
+- [TabBarController](https://github.com/IjzerenHein/famous-flex-tabbarcontroller/blob/master/tutorial/TabBarController.md)
 
 ### [Layouts](#standard-layouts)
 - [ProportionalLayout](docs/layouts/ProportionalLayout.md)
@@ -252,10 +256,12 @@ Layout helpers are special classes that simplify writing layout functions.
 |Class|Description|
 |---|---|
 |[LayoutController](docs/LayoutController.md)|Lays out renderables and optionally animates between layout states.|
+|[AnimationController](https://github.com/IjzerenHein/famous-flex-animationcontroller/blob/master/tutorial/AnimationController.md)|Animating between famo.us views in awesome ways.|
 |[ScrollController](docs/ScrollController.md)|Scrollable LayoutController (base class for FlexScrollView).|
 |[FlexScrollView](tutorials/FlexScrollView.md)|Flexible scroll-view with pull-to-refresh, margins & spacing and more good stuff.|
 |[DatePicker](https://github.com/IjzerenHein/famous-flex-datepicker/blob/master/tutorial/DatePicker.md)|Date/time picker wheel.|
 |[TabBar](https://github.com/IjzerenHein/famous-flex-tabbar/blob/master/tutorial/TabBar.md)|TabBar widget.|
+|[TabBarController](https://github.com/IjzerenHein/famous-flex-tabbarcontroller/blob/master/tutorial/TabBarController.md)|TabBarController widget.|
 |[LayoutContext](docs/LayoutContext.md)|Context used for writing layout-functions.|
 |[LayoutUtility](docs/LayoutUtility.md)|Utility class containing helper functions.|
 |[VirtualViewSequence](docs/VirtualViewSequence.md)|Infinite view-sequence which uses a factory delegate to create renderables.|

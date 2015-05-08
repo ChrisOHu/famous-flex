@@ -5,10 +5,8 @@
  *
  * @author: Hein Rutjes (IjzerenHein)
  * @license MIT
- * @copyright Gloey Apps, 2014
+ * @copyright Gloey Apps, 2014 - 2015
  */
-
-/*global define*/
 
 /**
  * Three part layout consisting of a top-header, bottom-footer and middle part.
@@ -47,8 +45,8 @@ define(function(require, exports, module) {
     // Layout function
     module.exports = function HeaderFooterLayout(context, options) {
         var dock = new LayoutDockHelper(context, options);
-        dock.top('header', options.headerSize || options.headerHeight);
-        dock.bottom('footer', options.footerSize || options.footerHeight);
+        dock.top('header', (options.headerSize !== undefined) ? options.headerSize : options.headerHeight);
+        dock.bottom('footer', (options.footerSize !== undefined) ? options.footerSize : options.footerHeight);
         dock.fill('content');
     };
 });
