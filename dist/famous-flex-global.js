@@ -8,18 +8,19 @@
 * @copyright Gloey Apps, 2014/2015
 *
 * @library famous-flex
-* @version 0.3.3
-* @generated 09-06-2015
+* @version 0.3.4
+* @generated 23-08-2015
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var View = window.famous.core.View;
+(function (global){
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
 var LayoutController = require('./LayoutController');
-var Transform = window.famous.core.Transform;
-var Modifier = window.famous.core.Modifier;
-var StateModifier = window.famous.modifiers.StateModifier;
-var RenderNode = window.famous.core.RenderNode;
-var Timer = window.famous.utilities.Timer;
-var Easing = window.famous.transitions.Easing;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var Modifier = typeof window !== 'undefined' ? window['famous']['core']['Modifier'] : typeof global !== 'undefined' ? global['famous']['core']['Modifier'] : null;
+var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers']['StateModifier'] : typeof global !== 'undefined' ? global['famous']['modifiers']['StateModifier'] : null;
+var RenderNode = typeof window !== 'undefined' ? window['famous']['core']['RenderNode'] : typeof global !== 'undefined' ? global['famous']['core']['RenderNode'] : null;
+var Timer = typeof window !== 'undefined' ? window['famous']['utilities']['Timer'] : typeof global !== 'undefined' ? global['famous']['utilities']['Timer'] : null;
+var Easing = typeof window !== 'undefined' ? window['famous']['transitions']['Easing'] : typeof global !== 'undefined' ? global['famous']['transitions']['Easing'] : null;
 function AnimationController(options) {
     View.apply(this, arguments);
     this._size = [
@@ -405,7 +406,7 @@ function _startHideAnimation(item, prevItem, size) {
         }
     }
 }
-function _setItemOptions(item, options) {
+function _setItemOptions(item, options, callback) {
     item.options = {
         show: {
             transition: this.options.show.transition || this.options.transition,
@@ -434,6 +435,17 @@ function _setItemOptions(item, options) {
         item.options.transfer.zIndex = options.transfer && options.transfer.zIndex !== undefined ? options.transfer.zIndex : item.options.transfer.zIndex;
         item.options.transfer.fastResize = options.transfer && options.transfer.fastResize !== undefined ? options.transfer.fastResize : item.options.transfer.fastResize;
     }
+    item.showCallback = function () {
+        item.showCallback = undefined;
+        item.state = ItemState.VISIBLE;
+        _updateState.call(this);
+        _endTransferableAnimations.call(this, item);
+        item.endSpec = undefined;
+        item.startSpec = undefined;
+        if (callback) {
+            callback();
+        }
+    }.bind(this);
 }
 function _updateState() {
     var prevItem;
@@ -504,10 +516,9 @@ AnimationController.prototype.show = function (renderable, options, callback) {
         item.hide = false;
         if (item.state === ItemState.HIDE) {
             item.state = ItemState.QUEUED;
-            _setItemOptions.call(this, item, options);
+            _setItemOptions.call(this, item, options, callback);
             _updateState.call(this);
-        }
-        if (callback) {
+        } else if (callback) {
             callback();
         }
         return this;
@@ -529,18 +540,7 @@ AnimationController.prototype.show = function (renderable, options, callback) {
     };
     item.node = new RenderNode(item.mod);
     item.node.add(renderable);
-    _setItemOptions.call(this, item, options);
-    item.showCallback = function () {
-        item.showCallback = undefined;
-        item.state = ItemState.VISIBLE;
-        _updateState.call(this);
-        _endTransferableAnimations.call(this, item);
-        item.endSpec = undefined;
-        item.startSpec = undefined;
-        if (callback) {
-            callback();
-        }
-    }.bind(this);
+    _setItemOptions.call(this, item, options, callback);
     item.hideCallback = function () {
         item.hideCallback = undefined;
         var index = this._viewStack.indexOf(item);
@@ -571,6 +571,7 @@ AnimationController.prototype.hide = function (options, callback) {
         }
     }
     item.hideCallback = function () {
+        item.hideCallback = undefined;
         var index = this._viewStack.indexOf(item);
         this._renderables.views.splice(index, 1);
         this._viewStack.splice(index, 1);
@@ -663,6 +664,7 @@ AnimationController.prototype.getSize = function () {
     return this._size || this.options.size;
 };
 module.exports = AnimationController;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./LayoutController":5}],2:[function(require,module,exports){
 var LayoutUtility = require('./LayoutUtility');
 var ScrollController = require('./ScrollController');
@@ -1072,14 +1074,15 @@ FlexScrollView.prototype.commit = function (context) {
 };
 module.exports = FlexScrollView;
 },{"./LayoutUtility":8,"./ScrollController":9,"./layouts/ListLayout":17}],3:[function(require,module,exports){
-var OptionsManager = window.famous.core.OptionsManager;
-var Transform = window.famous.core.Transform;
-var Vector = window.famous.math.Vector;
-var Particle = window.famous.physics.bodies.Particle;
-var Spring = window.famous.physics.forces.Spring;
-var PhysicsEngine = window.famous.physics.PhysicsEngine;
+(function (global){
+var OptionsManager = typeof window !== 'undefined' ? window['famous']['core']['OptionsManager'] : typeof global !== 'undefined' ? global['famous']['core']['OptionsManager'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var Vector = typeof window !== 'undefined' ? window['famous']['math']['Vector'] : typeof global !== 'undefined' ? global['famous']['math']['Vector'] : null;
+var Particle = typeof window !== 'undefined' ? window['famous']['physics']['bodies']['Particle'] : typeof global !== 'undefined' ? global['famous']['physics']['bodies']['Particle'] : null;
+var Spring = typeof window !== 'undefined' ? window['famous']['physics']['forces']['Spring'] : typeof global !== 'undefined' ? global['famous']['physics']['forces']['Spring'] : null;
+var PhysicsEngine = typeof window !== 'undefined' ? window['famous']['physics']['PhysicsEngine'] : typeof global !== 'undefined' ? global['famous']['physics']['PhysicsEngine'] : null;
 var LayoutNode = require('./LayoutNode');
-var Transitionable = window.famous.transitions.Transitionable;
+var Transitionable = typeof window !== 'undefined' ? window['famous']['transitions']['Transitionable'] : typeof global !== 'undefined' ? global['famous']['transitions']['Transitionable'] : null;
 function FlowLayoutNode(renderNode, spec) {
     LayoutNode.apply(this, arguments);
     if (!this.options) {
@@ -1513,6 +1516,7 @@ FlowLayoutNode.prototype.set = function (set, defaultSize) {
     }
 };
 module.exports = FlowLayoutNode;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./LayoutNode":6}],4:[function(require,module,exports){
 function LayoutContext(methods) {
     for (var n in methods) {
@@ -1536,16 +1540,17 @@ LayoutContext.prototype.resolveSize = function (node) {
 };
 module.exports = LayoutContext;
 },{}],5:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
-var Entity = window.famous.core.Entity;
-var ViewSequence = window.famous.core.ViewSequence;
-var OptionsManager = window.famous.core.OptionsManager;
-var EventHandler = window.famous.core.EventHandler;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
+var Entity = typeof window !== 'undefined' ? window['famous']['core']['Entity'] : typeof global !== 'undefined' ? global['famous']['core']['Entity'] : null;
+var ViewSequence = typeof window !== 'undefined' ? window['famous']['core']['ViewSequence'] : typeof global !== 'undefined' ? global['famous']['core']['ViewSequence'] : null;
+var OptionsManager = typeof window !== 'undefined' ? window['famous']['core']['OptionsManager'] : typeof global !== 'undefined' ? global['famous']['core']['OptionsManager'] : null;
+var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
 var LayoutUtility = require('./LayoutUtility');
 var LayoutNodeManager = require('./LayoutNodeManager');
 var LayoutNode = require('./LayoutNode');
 var FlowLayoutNode = require('./FlowLayoutNode');
-var Transform = window.famous.core.Transform;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
 require('./helpers/LayoutDockHelper');
 function LayoutController(options, nodeManager) {
     this.id = Entity.register(this);
@@ -2187,8 +2192,10 @@ LayoutController.prototype.cleanup = function (context) {
     }
 };
 module.exports = LayoutController;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./FlowLayoutNode":3,"./LayoutNode":6,"./LayoutNodeManager":7,"./LayoutUtility":8,"./helpers/LayoutDockHelper":11}],6:[function(require,module,exports){
-var Transform = window.famous.core.Transform;
+(function (global){
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
 var LayoutUtility = require('./LayoutUtility');
 function LayoutNode(renderNode, spec) {
     this.renderNode = renderNode;
@@ -2345,11 +2352,13 @@ LayoutNode.prototype.remove = function (removeSpec) {
     this._removing = true;
 };
 module.exports = LayoutNode;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./LayoutUtility":8}],7:[function(require,module,exports){
+(function (global){
 var LayoutContext = require('./LayoutContext');
 var LayoutUtility = require('./LayoutUtility');
-var Surface = window.famous.core.Surface;
-var RenderNode = window.famous.core.RenderNode;
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var RenderNode = typeof window !== 'undefined' ? window['famous']['core']['RenderNode'] : typeof global !== 'undefined' ? global['famous']['core']['RenderNode'] : null;
 var MAX_POOL_SIZE = 100;
 function LayoutNodeManager(LayoutNode, initLayoutNodeFn) {
     this.LayoutNode = LayoutNode;
@@ -2856,8 +2865,10 @@ function _contextResolveSize(contextNodeOrId, parentSize) {
     return size;
 }
 module.exports = LayoutNodeManager;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./LayoutContext":4,"./LayoutUtility":8}],8:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 function LayoutUtility() {
 }
 LayoutUtility.registeredHelpers = {};
@@ -3031,23 +3042,25 @@ LayoutUtility.getRegisteredHelper = function (name) {
     return this.registeredHelpers[name];
 };
 module.exports = LayoutUtility;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],9:[function(require,module,exports){
+(function (global){
 var LayoutUtility = require('./LayoutUtility');
 var LayoutController = require('./LayoutController');
 var LayoutNode = require('./LayoutNode');
 var FlowLayoutNode = require('./FlowLayoutNode');
 var LayoutNodeManager = require('./LayoutNodeManager');
-var ContainerSurface = window.famous.surfaces.ContainerSurface;
-var Transform = window.famous.core.Transform;
-var EventHandler = window.famous.core.EventHandler;
-var Group = window.famous.core.Group;
-var Vector = window.famous.math.Vector;
-var PhysicsEngine = window.famous.physics.PhysicsEngine;
-var Particle = window.famous.physics.bodies.Particle;
-var Drag = window.famous.physics.forces.Drag;
-var Spring = window.famous.physics.forces.Spring;
-var ScrollSync = window.famous.inputs.ScrollSync;
-var ViewSequence = window.famous.core.ViewSequence;
+var ContainerSurface = typeof window !== 'undefined' ? window['famous']['surfaces']['ContainerSurface'] : typeof global !== 'undefined' ? global['famous']['surfaces']['ContainerSurface'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
+var Group = typeof window !== 'undefined' ? window['famous']['core']['Group'] : typeof global !== 'undefined' ? global['famous']['core']['Group'] : null;
+var Vector = typeof window !== 'undefined' ? window['famous']['math']['Vector'] : typeof global !== 'undefined' ? global['famous']['math']['Vector'] : null;
+var PhysicsEngine = typeof window !== 'undefined' ? window['famous']['physics']['PhysicsEngine'] : typeof global !== 'undefined' ? global['famous']['physics']['PhysicsEngine'] : null;
+var Particle = typeof window !== 'undefined' ? window['famous']['physics']['bodies']['Particle'] : typeof global !== 'undefined' ? global['famous']['physics']['bodies']['Particle'] : null;
+var Drag = typeof window !== 'undefined' ? window['famous']['physics']['forces']['Drag'] : typeof global !== 'undefined' ? global['famous']['physics']['forces']['Drag'] : null;
+var Spring = typeof window !== 'undefined' ? window['famous']['physics']['forces']['Spring'] : typeof global !== 'undefined' ? global['famous']['physics']['forces']['Spring'] : null;
+var ScrollSync = typeof window !== 'undefined' ? window['famous']['inputs']['ScrollSync'] : typeof global !== 'undefined' ? global['famous']['inputs']['ScrollSync'] : null;
+var ViewSequence = typeof window !== 'undefined' ? window['famous']['core']['ViewSequence'] : typeof global !== 'undefined' ? global['famous']['core']['ViewSequence'] : null;
 var Bounds = {
         NONE: 0,
         PREV: 1,
@@ -4343,8 +4356,10 @@ ScrollController.prototype.render = function render() {
     }
 };
 module.exports = ScrollController;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./FlowLayoutNode":3,"./LayoutController":5,"./LayoutNode":6,"./LayoutNodeManager":7,"./LayoutUtility":8}],10:[function(require,module,exports){
-var EventHandler = window.famous.core.EventHandler;
+(function (global){
+var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
 function VirtualViewSequence(options) {
     options = options || {};
     this._ = options._ || new this.constructor.Backing(options);
@@ -4467,6 +4482,7 @@ VirtualViewSequence.prototype.swap = function () {
     }
 };
 module.exports = VirtualViewSequence;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],11:[function(require,module,exports){
 var LayoutUtility = require('../LayoutUtility');
 function LayoutDockHelper(context, options) {
@@ -4671,7 +4687,8 @@ LayoutDockHelper.prototype.get = function () {
 LayoutUtility.registerHelper('dock', LayoutDockHelper);
 module.exports = LayoutDockHelper;
 },{"../LayoutUtility":8}],12:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
 var capabilities = {
         sequence: true,
@@ -4886,8 +4903,10 @@ CollectionLayout.Capabilities = capabilities;
 CollectionLayout.Name = 'CollectionLayout';
 CollectionLayout.Description = 'Multi-cell collection-layout with margins & spacing';
 module.exports = CollectionLayout;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../LayoutUtility":8}],13:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
         sequence: true,
         direction: [
@@ -4993,6 +5012,7 @@ function CoverLayout(context, options) {
 }
 CoverLayout.Capabilities = capabilities;
 module.exports = CoverLayout;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],14:[function(require,module,exports){
 module.exports = function CubeLayout(context, options) {
     var itemSize = options.itemSize;
@@ -5079,7 +5099,8 @@ module.exports = function HeaderFooterLayout(context, options) {
     dock.fill('content');
 };
 },{"../helpers/LayoutDockHelper":11}],17:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
 var capabilities = {
         sequence: true,
@@ -5256,6 +5277,7 @@ ListLayout.Capabilities = capabilities;
 ListLayout.Name = 'ListLayout';
 ListLayout.Description = 'List-layout with margins, spacing and sticky headers';
 module.exports = ListLayout;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../LayoutUtility":8}],18:[function(require,module,exports){
 var LayoutDockHelper = require('../helpers/LayoutDockHelper');
 module.exports = function NavBarLayout(context, options) {
@@ -5313,7 +5335,8 @@ module.exports = function NavBarLayout(context, options) {
     }
 };
 },{"../helpers/LayoutDockHelper":11}],19:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
         sequence: true,
         direction: [
@@ -5367,8 +5390,10 @@ function ProportionalLayout(context, options) {
 }
 ProportionalLayout.Capabilities = capabilities;
 module.exports = ProportionalLayout;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],20:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
 var capabilities = {
         sequence: true,
@@ -5485,8 +5510,10 @@ TabBarLayout.Capabilities = capabilities;
 TabBarLayout.Name = 'TabBarLayout';
 TabBarLayout.Description = 'TabBar widget layout';
 module.exports = TabBarLayout;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../LayoutUtility":8}],21:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
         sequence: true,
         direction: [
@@ -5594,11 +5621,13 @@ WheelLayout.Capabilities = capabilities;
 WheelLayout.Name = 'WheelLayout';
 WheelLayout.Description = 'Spinner-wheel/slot-machine layout';
 module.exports = WheelLayout;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],22:[function(require,module,exports){
-var View = window.famous.core.View;
-var Surface = window.famous.core.Surface;
-var Utility = window.famous.utilities.Utility;
-var ContainerSurface = window.famous.surfaces.ContainerSurface;
+(function (global){
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
+var ContainerSurface = typeof window !== 'undefined' ? window['famous']['surfaces']['ContainerSurface'] : typeof global !== 'undefined' ? global['famous']['surfaces']['ContainerSurface'] : null;
 var LayoutController = require('../LayoutController');
 var ScrollController = require('../ScrollController');
 var WheelLayout = require('../layouts/WheelLayout');
@@ -5882,9 +5911,11 @@ function _createOverlay() {
     this.add(this.overlay);
 }
 module.exports = DatePicker;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../LayoutController":5,"../LayoutUtility":8,"../ScrollController":9,"../VirtualViewSequence":10,"../layouts/ProportionalLayout":19,"../layouts/WheelLayout":21,"./DatePickerComponents":23}],23:[function(require,module,exports){
-var Surface = window.famous.core.Surface;
-var EventHandler = window.famous.core.EventHandler;
+(function (global){
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
 function decimal1(date) {
     return '' + date[this.get]();
 }
@@ -6170,9 +6201,11 @@ module.exports = {
     Second: Second,
     Millisecond: Millisecond
 };
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],24:[function(require,module,exports){
-var Surface = window.famous.core.Surface;
-var View = window.famous.core.View;
+(function (global){
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
 var LayoutController = require('../LayoutController');
 var TabBarLayout = require('../layouts/TabBarLayout');
 function TabBar(options) {
@@ -6332,13 +6365,15 @@ TabBar.prototype.getSize = function () {
     return this.options.size || (this.layout ? this.layout.getSize() : View.prototype.getSize.call(this));
 };
 module.exports = TabBar;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../LayoutController":5,"../layouts/TabBarLayout":20}],25:[function(require,module,exports){
-var View = window.famous.core.View;
+(function (global){
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
 var AnimationController = require('../AnimationController');
 var TabBar = require('./TabBar');
 var LayoutDockHelper = require('../helpers/LayoutDockHelper');
 var LayoutController = require('../LayoutController');
-var Easing = window.famous.transitions.Easing;
+var Easing = typeof window !== 'undefined' ? window['famous']['transitions']['Easing'] : typeof global !== 'undefined' ? global['famous']['transitions']['Easing'] : null;
 function TabBarController(options) {
     View.apply(this, arguments);
     _createRenderables.call(this);
@@ -6460,6 +6495,7 @@ TabBarController.prototype.getSelectedItemIndex = function () {
     return this.tabBar.getSelectedItemIndex();
 };
 module.exports = TabBarController;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../AnimationController":1,"../LayoutController":5,"../helpers/LayoutDockHelper":11,"./TabBar":24}],26:[function(require,module,exports){
 if (typeof famousflex === 'undefined') {
     famousflex = {};

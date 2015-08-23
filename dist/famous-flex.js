@@ -8,8 +8,8 @@
 * @copyright Gloey Apps, 2014/2015
 *
 * @library famous-flex
-* @version 0.3.3
-* @generated 09-06-2015
+* @version 0.3.4
+* @generated 23-08-2015
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -7248,7 +7248,7 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
     /**
      * Sets the options for an item.
      */
-    function _setItemOptions(item, options) {
+    function _setItemOptions(item, options, callback) {
         item.options = {
             show: {
                 transition: this.options.show.transition || this.options.transition,
@@ -7278,6 +7278,17 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
             item.options.transfer.zIndex = (options.transfer && (options.transfer.zIndex !== undefined)) ? options.transfer.zIndex : item.options.transfer.zIndex;
             item.options.transfer.fastResize = (options.transfer && (options.transfer.fastResize !== undefined)) ? options.transfer.fastResize : item.options.transfer.fastResize;
         }
+        item.showCallback = function() {
+            item.showCallback = undefined;
+            item.state = ItemState.VISIBLE;
+            _updateState.call(this);
+            _endTransferableAnimations.call(this, item);
+            item.endSpec = undefined;
+            item.startSpec = undefined;
+            if (callback) {
+                callback();
+            }
+        }.bind(this);
     }
 
     /**
@@ -7381,10 +7392,10 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
             item.hide = false;
             if (item.state === ItemState.HIDE) {
                 item.state = ItemState.QUEUED;
-                _setItemOptions.call(this, item, options);
+                _setItemOptions.call(this, item, options, callback);
                 _updateState.call(this);
             }
-            if (callback) {
+            else if (callback) {
                 callback();
             }
             return this;
@@ -7407,18 +7418,7 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
         };
         item.node = new RenderNode(item.mod);
         item.node.add(renderable);
-        _setItemOptions.call(this, item, options);
-        item.showCallback = function() {
-            item.showCallback = undefined;
-            item.state = ItemState.VISIBLE;
-            _updateState.call(this);
-            _endTransferableAnimations.call(this, item);
-            item.endSpec = undefined;
-            item.startSpec = undefined;
-            if (callback) {
-                callback();
-            }
-        }.bind(this);
+        _setItemOptions.call(this, item, options, callback);
         item.hideCallback = function() {
             item.hideCallback = undefined;
             var index = this._viewStack.indexOf(item);
@@ -7460,6 +7460,7 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
             }
         }
         item.hideCallback = function() {
+            item.hideCallback = undefined;
             var index = this._viewStack.indexOf(item);
             this._renderables.views.splice(index, 1);
             this._viewStack.splice(index, 1);

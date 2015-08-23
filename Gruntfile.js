@@ -69,7 +69,11 @@ module.exports = function(grunt) {
             { src: 'src/layouts/NavBarLayout.js', dest: 'docs/layouts/NavBarLayout.md' },
             { src: 'src/layouts/WheelLayout.js', dest: 'docs/layouts/WheelLayout.md' },
             { src: 'src/layouts/ProportionalLayout.js', dest: 'docs/layouts/ProportionalLayout.md' },
-            { src: 'src/layouts/TabBarLayout.js', dest: 'docs/layouts/TabBarLayout.md' }
+            { src: 'src/layouts/TabBarLayout.js', dest: 'docs/layouts/TabBarLayout.md' },
+            // views
+            { src: 'src/views/AnimatedIcon.js', dest: 'docs/views/AnimatedIcon.md' },
+            { src: 'src/views/AutosizeTextareaSurface.js', dest: 'docs/views/AutosizeTextareaSurface.md' },
+            { src: 'src/views/RefreshLoader.js', dest: 'docs/views/RefreshLoader.md' },
         ]
       }
     },
