@@ -25,4 +25,12 @@ define(function(require) {
     require('famous-flex/layouts/WheelLayout');
 
     require('famous-flex/helpers/LayoutDockHelper');
+
+    require('famous-flex/views/AnimatedIcon');
+    require('famous-flex/views/AutoFontSizeSurface');
+    require('famous-flex/views/AutosizeTextareaSurface');
+    require('famous-flex/views/BkImageSurface');
+    require('famous-flex/views/KenBurnsContainer');
+    require('famous-flex/views/RefreshLoader');
+    require('famous-flex/views/SizeConstraint');
 });

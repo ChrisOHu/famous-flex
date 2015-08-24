@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.4
-* @generated 23-08-2015
+* @generated 24-08-2015
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -10115,7 +10115,1427 @@ define('famous-flex/layouts/NavBarLayout',['require','exports','module','../help
     };
 });
 
-define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLayoutNode','famous-flex/LayoutContext','famous-flex/LayoutController','famous-flex/LayoutNode','famous-flex/LayoutNodeManager','famous-flex/LayoutUtility','famous-flex/ScrollController','famous-flex/VirtualViewSequence','famous-flex/AnimationController','famous-flex/widgets/DatePicker','famous-flex/widgets/TabBar','famous-flex/widgets/TabBarController','famous-flex/layouts/CollectionLayout','famous-flex/layouts/CoverLayout','famous-flex/layouts/CubeLayout','famous-flex/layouts/GridLayout','famous-flex/layouts/HeaderFooterLayout','famous-flex/layouts/ListLayout','famous-flex/layouts/NavBarLayout','famous-flex/layouts/ProportionalLayout','famous-flex/layouts/WheelLayout','famous-flex/helpers/LayoutDockHelper'],function(require) {
+/*
+ * Copyright (c) 2014 Gloey Apps
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @author: Hein Rutjes (IjzerenHein)
+ * @license MIT
+ * @copyright Gloey Apps, 2014
+ */
+
+/*jslint browser:true, nomen:true, vars:true, plusplus:true*/
+/*global define*/
+
+define('famous-flex/views/AnimatedIcon',['require','exports','module','famous/core/Surface','famous/modifiers/StateModifier','famous/core/View','famous/core/Transform'],function(require, exports, module) {
+    'use strict';
+
+    // import dependencies
+    var Surface = require('famous/core/Surface');
+    var StateModifier = require('famous/modifiers/StateModifier');
+    var View = require('famous/core/View');
+    var Transform = require('famous/core/Transform');
+
+    /**
+     * @enum
+     */
+    var Shape = {
+        HAMBURGER: 0,
+        LEFT_ARROW: 1
+    };
+
+    /**
+     * @class
+     * @extends View
+     * @param {Object} [options] Configuration options
+     */
+    function AnimatedIcon(options) {
+        View.apply(this, arguments);
+
+        this._createLines();
+        this._createShapes();
+
+        this.setShape(Shape.HAMBURGER, {duration: 0});
+    }
+    AnimatedIcon.prototype = Object.create(View.prototype);
+    AnimatedIcon.prototype.constructor = AnimatedIcon;
+    AnimatedIcon.Shape = Shape;
+
+    AnimatedIcon.DEFAULT_OPTIONS = {
+        defaultTransition: {duration: 300}
+    };
+
+    /**
+     * Create line modifiers & surfaces
+     */
+    AnimatedIcon.prototype._createLines = function() {
+        var i;
+        this.lines = [];
+        for (i = 0; i < 3; i++) {
+            var modifier = new StateModifier({
+                align: [0.5, 0.0],
+                origin: [0.0, 0.5]
+            });
+            var surface = new Surface({
+                classes: ['line']
+            });
+            this.add(modifier).add(surface);
+            this.lines.push(modifier);
+        }
+    };
+
+    /**
+     * Create shapes
+     */
+    AnimatedIcon.prototype._createShapes = function() {
+        this.shapes = [];
+
+        // Hamburger
+        this.shapes.push({
+            name: 'hamburger',
+            lines: [
+                { size: [24, 2], transform: Transform.translate(0, 8, 0) },
+                { size: [24, 2], transform: Transform.translate(0, 15, 0) },
+                { size: [24, 2], transform: Transform.translate(0, 22, 0) }
+            ]
+        });
+
+        // Left-arrow
+        this.shapes.push({
+            name: 'left-arrow',
+            lines: [
+                { size: [10, 2], transform: Transform.multiply(Transform.translate(10, 21.5, 0), Transform.rotateZ((Math.PI / 180) * 225)) },
+                { size: [16, 2], transform: Transform.multiply(Transform.translate(20, 15, 0), Transform.rotateZ((Math.PI / 180) * 180)) },
+                { size: [10, 2], transform: Transform.multiply(Transform.translate(3, 15.5, 0), Transform.rotateZ((Math.PI / 180) * 315)) }
+            ]
+        });
+    };
+
+    /**
+     * Sets the shape
+     */
+    AnimatedIcon.prototype.setShape = function(shapeIndex, transition, callback) {
+        if (this._shapeIndex === shapeIndex) {
+            if (callback) {
+              callback();
+            }
+            return;
+        }
+        this._shapeIndex = shapeIndex;
+        if (!transition) {
+          transition = this.options.defaultTransition;
+        }
+        var i;
+        var shape = this.shapes[shapeIndex];
+        for (i = 0; i < shape.lines.length; i++) {
+            this.lines[i].halt();
+            this.lines[i].setSize(shape.lines[i].size, transition);
+            if (i === 0) {
+                this.lines[i].setTransform(shape.lines[i].transform, transition, callback);
+            } else {
+                this.lines[i].setTransform(shape.lines[i].transform, transition);
+            }
+        }
+    };
+
+    /**
+     * Get the shape
+     */
+    AnimatedIcon.prototype.getShape = function(shapeIndex, transition) {
+        return this._shapeIndex;
+    };
+
+    module.exports = AnimatedIcon;
+});
+
+/**
+ * This Source Code is licensed under the MIT license. If a copy of the
+ * MIT-license was not distributed with this file, You can obtain one at:
+ * http://opensource.org/licenses/mit-license.html.
+ *
+ * @author: Hein Rutjes (IjzerenHein)
+ * @license MIT
+ * @copyright Gloey Apps 2015
+ */
+
+/**
+ * @module
+ */
+define('famous-flex/views/AutoFontSizeSurface',['require','exports','module','famous/core/Surface','famous/utilities/Timer'],function(require, exports, module) {
+
+    // import dependencies
+    var Surface = require('famous/core/Surface');
+    var Timer = require('famous/utilities/Timer');
+
+    /**
+     * @class
+     * @extends AutoFontSizeSurface
+     * @param {Object} [options] Configuration options
+     */
+    function AutoFontSizeSurface(options) {
+        if (!options.fontSizeRange) {
+            throw 'No fontSizeRange specified';
+        }
+        this._fontSizeUnit = 'px';
+        this._invalidated = true;
+        this._oldCachedSize = [0, 0];
+        _createHiddenSurface.call(this);
+        Surface.apply(this, arguments);
+        this._fontSize = this._fontSizeRange[1];
+        this._recalcTrigger = AutoFontSizeSurface.recalcTrigger;
+    }
+    AutoFontSizeSurface.prototype = Object.create(Surface.prototype);
+    AutoFontSizeSurface.prototype.constructor = AutoFontSizeSurface;
+
+    /**
+     * Causes all AutoFontSizeSurfaces to recalculate their font-sizes.
+     * Use this method to for instance recalc after a font has been loaded.
+     */
+    AutoFontSizeSurface.refreshAll = function() {
+      AutoFontSizeSurface.recalcTrigger++;
+    };
+    AutoFontSizeSurface.recalcTrigger = 0;
+
+    /**
+     * Create the hidden surface
+     */
+    function _createHiddenSurface() {
+        this._hiddenSurface = new Surface({
+            size: [undefined, true]
+        });
+        this._hiddenSurface.recall = AutoFontSizeSurface.prototype.recall;
+        this.setProperties({});
+    }
+
+    /**
+     * Return render-spec of both this surface and the hidden
+     * surface so that they are both rendered.
+     *
+     * @private
+     */
+    AutoFontSizeSurface.prototype.render = function() {
+        return [this._hiddenSurface.id, this.id];
+    };
+
+    /**
+     * Apply changes from this component to the corresponding document element.
+     * This includes changes to classes, styles, size, content, opacity, origin,
+     * and matrix transforms.
+     *
+     * @private
+     * @param {Context} context commit context
+     */
+    AutoFontSizeSurface.prototype.commit = function(context) {
+        Surface.prototype.commit.apply(this, arguments);
+
+        // Check if height has been changed
+        if ((this._oldCachedSize[0] !== context.size[0]) ||
+            (this._oldCachedSize[1] !== context.size[1])) {
+            this._oldCachedSize[0] = context.size[0];
+            this._oldCachedSize[1] = context.size[1];
+            this._invalidated = true;
+        }
+        if (this._recalcTrigger !== AutoFontSizeSurface.recalcTrigger) {
+          this._recalcTrigger = AutoFontSizeSurface.recalcTrigger;
+          this._invalidated = true;
+        }
+
+        // Caluclate preferred height
+        if (this._currentTarget && this._hiddenSurface._currentTarget && this._invalidated) {
+            var hiddenEl = this._hiddenSurface._currentTarget;
+            hiddenEl.innerHTML = this._currentTarget.innerHTML;
+            this._invalidated = false;
+
+            var fontSize = Math.max(Math.min(this._fontSize, this._fontSizeRange[1]), this._fontSizeRange[0]);
+            var fontSizeStr = fontSize + this._fontSizeUnit;
+            if (hiddenEl.style.fontSize !== fontSizeStr) {
+                hiddenEl.style.fontSize = fontSizeStr;
+            }
+            if ((hiddenEl.clientHeight < context.size[1]) &&
+                (hiddenEl.scrollWidth <= Math.ceil(context.size[0]))) {
+                while (fontSize < this._fontSizeRange[1]) {
+                    hiddenEl.style.fontSize = (fontSize + 1) + this._fontSizeUnit;
+                    if ((hiddenEl.clientHeight > context.size[1]) ||
+                        (hiddenEl.scrollWidth > Math.ceil(context.size[0]))) {
+                        hiddenEl.style.fontSize = fontSizeStr;
+                        break;
+                    }
+                    fontSize++;
+                    fontSizeStr = fontSize + this._fontSizeUnit;
+                }
+            }
+            else if ((hiddenEl.clientHeight > context.size[1]) ||
+                     (hiddenEl.scrollWidth > Math.ceil(context.size[0]))) {
+                while (fontSize > this._fontSizeRange[0]) {
+                    fontSize--;
+                    fontSizeStr = fontSize + this._fontSizeUnit;
+                    hiddenEl.style.fontSize = fontSizeStr;
+                    if ((hiddenEl.clientHeight <= context.size[1]) &&
+                        (hiddenEl.scrollWidth <= Math.ceil(context.size[0]))) {
+                        break;
+                    }
+                }
+            }
+            this._fontSize = fontSize;
+            if (this._currentTarget.style.fontSize !== fontSizeStr) {
+                this._currentTarget.style.fontSize = fontSizeStr;
+            }
+
+            // The first time this surfaces was commited to the DOM, recalc after a second
+            // allowing the browser to fetch the used the font if neccessary.
+            if (!this._firstCommit) {
+                this._firstCommit = true;
+                Timer.setTimeout(function() {
+                    this._invalidated = true;
+                }.bind(this), 100);
+            }
+        }
+    };
+
+    /**
+     * Called when the surface is recalled from the DOM. Removes the font-size style.
+     *
+     * @private
+     */
+    AutoFontSizeSurface.prototype.recall = function(target) {
+      target.style.fontSize = '';
+      this._invalidated = true;
+      return Surface.prototype.recall.apply(this, arguments);
+    };
+
+    /**
+     * Copy set properties to hidden surface and ensure that it stays hidden.
+     *
+     * @private
+     */
+    AutoFontSizeSurface.prototype.setProperties = function setProperties(properties) {
+        properties = properties || {};
+        var hiddenProperties = {};
+        for (var key in properties) {
+            hiddenProperties[key] = properties[key];
+        }
+        hiddenProperties.visibility = 'hidden';
+        this._hiddenSurface.setProperties(hiddenProperties);
+        this._invalidated = true;
+        return Surface.prototype.setProperties.apply(this, arguments);
+    };
+
+    /**
+     * Override methods and forward to hidden surface, so that they use the
+     * same settings.
+     *
+     * @private
+     */
+    AutoFontSizeSurface.prototype.setAttributes = function setAttributes(attributes) {
+        this._invalidated = true;
+        this._hiddenSurface.setAttributes(attributes);
+        return Surface.prototype.setAttributes.apply(this, arguments);
+    };
+
+    /**
+     * @private
+     */
+    AutoFontSizeSurface.prototype.addClass = function addClass(className) {
+        this._invalidated = true;
+        this._hiddenSurface.addClass(className);
+        return Surface.prototype.addClass.apply(this, arguments);
+    };
+
+    /**
+     * @private
+     */
+    AutoFontSizeSurface.prototype.removeClass = function removeClass(className) {
+        this._invalidated = true;
+        this._hiddenSurface.removeClass(className);
+        return Surface.prototype.removeClass.apply(this, arguments);
+    };
+
+    /**
+     * @private
+     */
+    AutoFontSizeSurface.prototype.toggleClass = function toggleClass(className) {
+        this._invalidated = true;
+        this._hiddenSurface.toggleClass(className);
+        return Surface.prototype.toggleClass.apply(this, arguments);
+    };
+
+    /**
+     * @private
+     */
+    AutoFontSizeSurface.prototype.setClasses = function setClasses(classList) {
+        this._invalidated = true;
+        var hiddenClassList = classList.concat(['hiddenAutoFontSizeSurface']);
+        this._hiddenSurface.setClasses(hiddenClassList);
+        return Surface.prototype.setClasses.apply(this, arguments);
+    };
+
+    /**
+     * @private
+     */
+    AutoFontSizeSurface.prototype.setContent = function setContent(content) {
+        this._invalidated = true;
+        return Surface.prototype.setContent.apply(this, arguments);
+    };
+
+    /**
+     * @private
+     */
+    AutoFontSizeSurface.prototype.setOptions = function setOptions(options) {
+        this._invalidated = true;
+        this._hiddenSurface.setOptions(options);
+        if (options.fontSizeRange) {
+            this._fontSizeRange = options.fontSizeRange;
+        }
+        if (options.fontSizeUnit) {
+            this._fontSizeUnit = options.fontSizeUnit;
+        }
+        return Surface.prototype.setOptions.apply(this, arguments);
+    };
+
+    /**
+     * Returns the font-size range that has been set.
+     */
+    AutoFontSizeSurface.prototype.getFontSizeRange = function() {
+        return this._fontSizeRange;
+    };
+
+    /**
+     * Returns the font-size range that has been set.
+     */
+    AutoFontSizeSurface.prototype.getFontSizeUnit = function() {
+        return this._fontSizeUnit;
+    };
+
+    module.exports = AutoFontSizeSurface;
+});
+
+/**
+ * This Source Code is licensed under the MIT license. If a copy of the
+ * MIT-license was not distributed with this file, You can obtain one at:
+ * http://opensource.org/licenses/mit-license.html.
+ *
+ * @author: Hein Rutjes (IjzerenHein)
+ * @license MIT
+ * @copyright Gloey Apps, 2014
+ */
+
+/*global define*/
+/*eslint no-use-before-define:0*/
+
+/**
+ * @module
+ */
+define('famous-flex/views/AutosizeTextareaSurface',['require','exports','module','famous/surfaces/TextareaSurface'],function(require, exports, module) {
+    'use strict';
+
+    // import dependencies
+    var TextareaSurface = require('famous/surfaces/TextareaSurface');
+
+    /**
+     * @class
+     * @extends TextareaSurface
+     * @param {Object} [options] Configuration options
+     */
+    function AutosizeTextareaSurface(options) {
+        this._heightInvalidated = true;
+        this._oldCachedSize = [0, 0];
+        _createHiddenSurface.call(this);
+        TextareaSurface.apply(this, arguments);
+        this.on('change', _onValueChanged.bind(this));
+        this.on('keyup', _onValueChanged.bind(this));
+        this.on('keydown', _onValueChanged.bind(this));
+    }
+    AutosizeTextareaSurface.prototype = Object.create(TextareaSurface.prototype);
+    AutosizeTextareaSurface.prototype.constructor = AutosizeTextareaSurface;
+
+    //
+    // Called whenever the value is changed, copies the value to the
+    // hidden TextArea surface.
+    //
+    function _onValueChanged(event) {
+        this._heightInvalidated = true;
+    }
+
+    /**
+     * Create the hidden text-area surface
+     */
+    function _createHiddenSurface() {
+        this._preferredScrollHeight = 0;
+        this._hiddenTextarea = new TextareaSurface({});
+        this.setProperties({});
+    }
+
+    /**
+     * Checks whether the scroll-height has changed and when so
+     * emits an event about the preferred height.
+     */
+    AutosizeTextareaSurface.prototype.render = function render() {
+
+        // Return render-spec of both this textArea and the hidden
+        // text-area so that they are both rendered.
+        return [this._hiddenTextarea.id, this.id];
+    };
+
+    var oldCommit = AutosizeTextareaSurface.prototype.commit;
+    /**
+     * Apply changes from this component to the corresponding document element.
+     * This includes changes to classes, styles, size, content, opacity, origin,
+     * and matrix transforms.
+     *
+     * @private
+     * @method commit
+     * @param {Context} context commit context
+     */
+    AutosizeTextareaSurface.prototype.commit = function commit(context) {
+
+        // Call base class
+        oldCommit.apply(this, arguments);
+
+        // Check if height has been changed
+        if ((this._oldCachedSize[0] !== context.size[0]) ||
+            (this._oldCachedSize[1] !== context.size[1])) {
+            this._oldCachedSize[0] = context.size[0];
+            this._oldCachedSize[1] = context.size[1];
+            this._heightInvalidated = true;
+        }
+
+        // Caluclate preferred height
+        if (this._currentTarget && this._hiddenTextarea._currentTarget && this._heightInvalidated) {
+            this._hiddenTextarea._currentTarget.value = this._currentTarget.value;
+            this._heightInvalidated = false;
+
+            // Calculate ideal scrollheight
+            this._hiddenTextarea._currentTarget.rows = 1;
+            this._hiddenTextarea._currentTarget.style.height = '';
+            var scrollHeight = this._hiddenTextarea._currentTarget.scrollHeight;
+            if (scrollHeight !== this._preferredScrollHeight) {
+                this._preferredScrollHeight = scrollHeight;
+                //console.log('scrollHeight changed: ' + this._preferredScrollHeight);
+                this._eventOutput.emit('scrollHeightChanged', this._preferredScrollHeight);
+            }
+        }
+    };
+
+    /**
+     * Get the height of the scrollable content.
+     *
+     * @return {Number} Ideal height that would fit all the content.
+     */
+    AutosizeTextareaSurface.prototype.getScrollHeight = function() {
+        return this._preferredScrollHeight;
+    };
+
+    /**
+     * Copy set properties to hidden text-area and ensure that it stays hidden.
+     */
+    var oldSetProperties = AutosizeTextareaSurface.prototype.setProperties;
+    AutosizeTextareaSurface.prototype.setProperties = function setProperties(properties) {
+        properties = properties || {};
+        var hiddenProperties = {};
+        for (var key in properties) {
+            hiddenProperties[key] = properties[key];
+        }
+        hiddenProperties.visibility = 'hidden';
+        this._hiddenTextarea.setProperties(hiddenProperties);
+        this._heightInvalidated = true;
+        return oldSetProperties.call(this, properties);
+    };
+
+    /**
+     * Override methods and forward to hidden text-area, so that they use the
+     * same settings.
+     */
+    var oldSetAttributes = AutosizeTextareaSurface.prototype.setAttributes;
+    AutosizeTextareaSurface.prototype.setAttributes = function setAttributes(attributes) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.setAttributes(attributes);
+        return oldSetAttributes.call(this, attributes);
+    };
+    var oldAddClass = AutosizeTextareaSurface.prototype.addClass;
+    AutosizeTextareaSurface.prototype.addClass = function addClass(className) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.addClass(className);
+        return oldAddClass.call(this, className);
+    };
+    var oldRemoveClass = AutosizeTextareaSurface.prototype.removeClass;
+    AutosizeTextareaSurface.prototype.removeClass = function removeClass(className) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.removeClass(className);
+        return oldRemoveClass.call(this, className);
+    };
+    var oldToggleClass = AutosizeTextareaSurface.prototype.toggleClass;
+    AutosizeTextareaSurface.prototype.toggleClass = function toggleClass(className) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.toggleClass(className);
+        return oldToggleClass.call(this, className);
+    };
+    var oldSetClasses = AutosizeTextareaSurface.prototype.setClasses;
+    AutosizeTextareaSurface.prototype.setClasses = function setClasses(classList) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.setClasses(classList);
+        return oldSetClasses.call(this, classList);
+    };
+    var oldSetContent = AutosizeTextareaSurface.prototype.setContent;
+    AutosizeTextareaSurface.prototype.setContent = function setContent(content) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.setContent(content);
+        return oldSetContent.call(this, content);
+    };
+    var oldSetOptions = AutosizeTextareaSurface.prototype.setOptions;
+    AutosizeTextareaSurface.prototype.setOptions = function setOptions(options) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.setOptions(options);
+        return oldSetOptions.call(this, options);
+    };
+    var oldSetValue = AutosizeTextareaSurface.prototype.setValue;
+    AutosizeTextareaSurface.prototype.setValue = function setValue(str) {
+        this._heightInvalidated = true;
+        return oldSetValue.call(this, str);
+    };
+    var oldSetWrap = AutosizeTextareaSurface.prototype.setWrap;
+    AutosizeTextareaSurface.prototype.setWrap = function setWrap(str) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.setWrap(str);
+        return oldSetWrap.call(this, str);
+    };
+    var oldSetColumns = AutosizeTextareaSurface.prototype.setColumns;
+    AutosizeTextareaSurface.prototype.setColumns = function setColumns(num) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.setColumns(num);
+        return oldSetColumns.call(this, num);
+    };
+    var oldSetRows = AutosizeTextareaSurface.prototype.setRows;
+    AutosizeTextareaSurface.prototype.setRows = function setRows(num) {
+        this._heightInvalidated = true;
+        this._hiddenTextarea.setRows(num);
+        return oldSetRows.call(this, num);
+    };
+
+    /**
+     * Place the document element this component manages into the document.
+     *
+     * This fixes the issue that the value cannot be set to an empty string:
+     * https://github.com/Famous/famous/issues/414
+     *
+     * @private
+     * @method deploy
+     * @param {Node} target document parent of this container
+     */
+    AutosizeTextareaSurface.prototype.deploy = function deploy(target) {
+        if (this._placeholder !== ''){
+            target.placeholder = this._placeholder;
+        }
+        target.value = this._value;
+        target.name = this._name;
+        target.wrap = this._wrap;
+        if (this._cols !== ''){
+            target.cols = this._cols;
+        }
+        if (this._rows !== ''){
+            target.rows = this._rows;
+        }
+    };
+
+    module.exports = AutosizeTextareaSurface;
+});
+
+/**
+ * This Source Code is licensed under the MIT license. If a copy of the
+ * MIT-license was not distributed with this file, You can obtain one at:
+ * http://opensource.org/licenses/mit-license.html.
+ *
+ * @author: Hein Rutjes (IjzerenHein)
+ * @license MIT
+ * @copyright Gloey Apps, 2014 - 2015
+ */
+
+/**
+ * BkImageSurface adds support for sizing-strategies such as AspectFit and AspectFill for displaying images with famo.us.
+ * It uses a 'div' with a background-image rather than a 'img' tag.
+ *
+ * Can be used as a drop-in replacement for ImageSurface, in case the the size of the div is not derived
+ * from the image.
+ *
+ * @module
+ */
+define('famous-flex/views/BkImageSurface',['require','exports','module','famous/core/Surface'],function(require, exports, module) {
+    'use strict';
+
+    // import dependencies
+    var Surface = require('famous/core/Surface');
+
+    /**
+     * @enum
+     * @alias module:BkImageSurface.SizeMode
+     */
+    var SizeMode = {
+        AUTO: 'auto',
+        FILL: '100% 100%',
+        ASPECTFILL: 'cover',
+        ASPECTFIT: 'contain'
+    };
+
+    /**
+     * @enum
+     * @alias module:BkImageSurface.PositionMode
+     */
+    var PositionMode = {
+        CENTER: 'center center',
+        LEFT: 'left center',
+        RIGHT: 'right center',
+        TOP: 'center top',
+        BOTTOM: 'center bottom',
+        TOPLEFT: 'left top',
+        TOPRIGHT: 'right top',
+        BOTTOMLEFT: 'left bottom',
+        BOTTOMRIGHT: 'right bottom'
+    };
+
+    /**
+     * @enum
+     * @alias module:BkImageSurface.RepeatMode
+     */
+    var RepeatMode = {
+        NONE: 'no-repeat',
+        VERTICAL: 'repeat-x',
+        HORIZONTAL: 'repeat-y',
+        BOTH: 'repeat'
+    };
+
+    /**
+     * @class
+     * @param {Object} options Options.
+     * @param {String} [options.content] Image-url.
+     * @param {SizeMode|String} [options.sizeMode] Size-mode to use.
+     * @param {PositionMode|String} [options.positionMode] Position-mode to use.
+     * @param {RepeatMode|String} [options.repeatMode] Repeat-mode to use.
+     * @alias module:BkImageSurface
+     */
+    function BkImageSurface(options) {
+        Surface.apply(this, arguments);
+        this.content = undefined;
+        this._imageUrl = options ? options.content : undefined;
+        this._sizeMode = (options && options.sizeMode) ? options.sizeMode : SizeMode.FILL;
+        this._positionMode = (options && options.positionMode) ? options.positionMode : PositionMode.CENTER;
+        this._repeatMode = (options && options.repeatMode) ? options.repeatMode : RepeatMode.NONE;
+
+        this._updateProperties();
+    }
+    BkImageSurface.prototype = Object.create(Surface.prototype);
+    BkImageSurface.prototype.constructor = BkImageSurface;
+    BkImageSurface.prototype.elementType = 'div';
+    BkImageSurface.prototype.elementClass = 'famous-surface';
+    BkImageSurface.SizeMode = SizeMode;
+    BkImageSurface.PositionMode = PositionMode;
+    BkImageSurface.RepeatMode = RepeatMode;
+
+    /**
+     * Update the css-styles on the div.
+     *
+     * @private
+     */
+    BkImageSurface.prototype._updateProperties = function() {
+        var props = this.getProperties();
+        if (this._imageUrl) {
+            var imageUrl = this._imageUrl;
+            // url encode '(' and ')'
+            if ((imageUrl.indexOf('(') >= 0) || (imageUrl.indexOf(')') >= 0)) {
+                imageUrl = imageUrl.split('(').join('%28');
+                imageUrl = imageUrl.split(')').join('%29');
+            }
+            props.backgroundImage = 'url(' + imageUrl + ')';
+        }
+        else {
+            props.backgroundImage = '';
+        }
+        props.backgroundSize = this._sizeMode;
+        props.backgroundPosition = this._positionMode;
+        props.backgroundRepeat = this._repeatMode;
+        this.setProperties(props);
+    };
+
+    /**
+     * @param {String} imageUrl Image-url, when set will cause re-rendering
+     */
+    BkImageSurface.prototype.setContent = function(imageUrl) {
+        this._imageUrl = imageUrl;
+        this._updateProperties();
+    };
+
+    /**
+     * @return {String} Image-url
+     */
+    BkImageSurface.prototype.getContent = function() {
+        return this._imageUrl;
+    };
+
+    /**
+     * @param {SizeMode|String} sizeMode Sizing-mode, when set will cause re-rendering
+     */
+    BkImageSurface.prototype.setSizeMode = function(sizeMode) {
+        this._sizeMode = sizeMode;
+        this._updateProperties();
+    };
+
+    /**
+     * @return {SizeMode|String} Size-mode
+     */
+    BkImageSurface.prototype.getSizeMode = function() {
+        return this._sizeMode;
+    };
+
+    /**
+     * @param {PositionMode|String} positionMode Position-mode, when set will cause re-rendering
+     */
+    BkImageSurface.prototype.setPositionMode = function(positionMode) {
+        this._positionMode = positionMode;
+        this._updateProperties();
+    };
+
+    /**
+     * @return {RepeatMode|String} Position-mode
+     */
+    BkImageSurface.prototype.getPositionMode = function() {
+        return this._positionMode;
+    };
+
+    /**
+     * @param {RepeatMode|String} repeatMode Repeat-mode, when set will cause re-rendering
+     */
+    BkImageSurface.prototype.setRepeatMode = function(repeatMode) {
+        this._repeatMode = repeatMode;
+        this._updateProperties();
+    };
+
+    /**
+     * @return {RepeatMode|String} Repeat-mode
+     */
+    BkImageSurface.prototype.getRepeatMode = function() {
+        return this._repeatMode;
+    };
+
+    /**
+     * Place the document element that this component manages into the document.
+     *
+     * NOTE: deploy and recall were added because famo.us removed the background-image
+     * after the surface was removed/re-added from the DOM.
+     *
+     * @private
+     * @param {Node} target document parent of this container
+     */
+    BkImageSurface.prototype.deploy = function deploy(target) {
+        target.innerHTML = '';
+        if (this._imageUrl) {
+            target.style.backgroundImage = 'url(' + this._imageUrl + ')';
+        }
+    };
+
+    /**
+     * Remove this component and contained content from the document
+     *
+     * NOTE: deploy and recall were added because famo.us removed the background-image
+     * after the surface was removed/re-added from the DOM.
+     *
+     * @private
+     * @param {Node} target node to which the component was deployed
+     */
+    BkImageSurface.prototype.recall = function recall(target) {
+        target.style.backgroundImage = '';
+    };
+
+    module.exports = BkImageSurface;
+});
+
+/**
+ * This Source Code is licensed under the MIT license. If a copy of the
+ * MIT-license was not distributed with this file, You can obtain one at:
+ * http://opensource.org/licenses/mit-license.html.
+ *
+ * @author: Hein Rutjes (IjzerenHein)
+ * @license MIT
+ * @copyright Gloey Apps, 2014/2015
+ */
+
+/**
+ * Ken burns effect for famo.us
+ * @module
+ */
+define('famous-flex/views/KenBurnsContainer',['require','exports','module','famous/modifiers/StateModifier','famous/surfaces/ContainerSurface','famous/core/View','famous/core/Transform','famous/transitions/Easing'],function(require, exports, module) {
+'use strict';
+
+    // import dependencies
+    var StateModifier = require('famous/modifiers/StateModifier');
+    var ContainerSurface = require('famous/surfaces/ContainerSurface');
+    var View = require('famous/core/View');
+    var Transform = require('famous/core/Transform');
+    var Easing = require('famous/transitions/Easing');
+
+    /**
+     * @class
+     * @param {Object} options Options.
+     * @param {Number} options.duration Default duration in msec for `panAndZoom` (default: 10000)
+     * @param {Number} options.delay Default duration in msec for `delay` (default: 1000)
+     * @param {Object} options.modifier Options that are passed to the internal `StateModifier`
+     * @param {Object} options.containerSurface Options that are passed to the internal `ContainerSurface`
+     * @alias module:KenBurnsContainer
+     */
+    function KenBurnsContainer() {
+        View.apply(this, arguments);
+
+        // create container-surface
+        this._containerSurface = new ContainerSurface(this.options.containerSurface);
+        this._node.add(this._containerSurface);
+
+        // create state-modifier for doing animations
+        this.modifier = new StateModifier(this.options.modifier);
+        this._renderable = this._containerSurface.add(this.modifier);
+
+        // init
+        this._newPosition = this.options.modifier.origin;
+        this._newZoomScale = 1.0;
+    }
+    KenBurnsContainer.prototype = Object.create(View.prototype);
+    KenBurnsContainer.prototype.constructor = KenBurnsContainer;
+
+    KenBurnsContainer.DEFAULT_OPTIONS = {
+        duration: 10000,             // default duration for panAndZoom()
+        delay: 1000,                 // default delay for delay()
+        modifier: {
+            origin: [0.5, 0.5],      // start position
+            align: [0.5, 0.5]        // start position
+        },
+        containerSurface: {
+            properties: {
+                overflow: 'hidden'   // clip content inside container
+            }
+        }
+    };
+
+    /**
+     * Add renderables to this object's render tree
+     *
+     * @param {Object} obj renderable object
+     * @return {RenderNode} RenderNode wrapping this object, if not already a RenderNode
+     */
+    KenBurnsContainer.prototype.add = function add() {
+        return this._renderable.add.apply(this._renderable, arguments);
+    };
+
+    /**
+     * Halts the animation effect.
+     */
+    KenBurnsContainer.prototype.halt = function halt() {
+        this.modifier.halt();
+    };
+
+    /**
+     * Checks whether the effect is active.
+     *
+     * @return {Boolean} Active-state
+     */
+    KenBurnsContainer.prototype.isActive = function isActive() {
+        this.modifier._transformState.isActive();
+    };
+
+    /**
+     * Pans and/or zooms the child renderables with the ken burns effect.
+     *
+     * @param {Array.Number} [position] Position in relative coordinates (see origin/align)
+     * @param {Number} [zoomScale] Scale-factor to use for zooming
+     * @param {Number} [duration] Duration in milliseconds (when omitted `options.duration` is used)
+     * @param {Function} [callback] Function to call upon completion
+     */
+    KenBurnsContainer.prototype.panAndZoom = function(position, zoomScale, duration, callback) {
+        this._newPosition = position || this._newPosition;
+        this._newZoomScale = zoomScale || this._newZoomScale;
+        var zoomTransition = {
+            duration: duration || this.options.duration,
+            curve: Easing.inOutSine
+        };
+        this.modifier.setTransform(Transform.scale(this._newZoomScale, this._newZoomScale, 1), zoomTransition, callback);
+        var panTransition = {
+            duration: duration || this.options.duration,
+            curve: Easing.inOutSine
+        };
+        this.modifier.setOrigin(this._newPosition, panTransition);
+        this.modifier.setAlign(this._newPosition, panTransition);
+    };
+
+    /**
+     * Waits for a certain amount of time.
+     *
+     * @param {Number} [duration] Duration in milliseconds (when omitted `options.delay` is used)
+     * @param {Function} [callback] Function to call upon completion
+     */
+    KenBurnsContainer.prototype.delay = function(duration, callback) {
+        duration = duration || this.options.delay;
+        if (!duration) {
+            return;
+        }
+        this.panAndZoom(null, null, duration, callback);
+    };
+
+    module.exports = KenBurnsContainer;
+});
+
+/**
+ * This Source Code is licensed under the MIT license. If a copy of the
+ * MIT-license was not distributed with this file, You can obtain one at:
+ * http://opensource.org/licenses/mit-license.html.
+ *
+ * @author: Hein Rutjes (IjzerenHein)
+ * @license MIT
+ * @copyright Gloey Apps, 2014
+ */
+
+/*global define*/
+/*eslint no-use-before-define:0*/
+
+/**
+ * @module
+ */
+define('famous-flex/views/RefreshLoader',['require','exports','module','famous/core/Entity','famous/core/Surface','famous/core/Transform','famous/core/Modifier','famous/core/View'],function(require, exports, module) {
+    'use strict';
+
+    // import dependencies
+    var Entity = require('famous/core/Entity');
+    var Surface = require('famous/core/Surface');
+    var Transform = require('famous/core/Transform');
+    var Modifier = require('famous/core/Modifier');
+    var View = require('famous/core/View');
+
+    /**
+     * @class
+     * @extends View
+     * @param {Object} [options] Configuration options
+     */
+    function RefreshLoader(options) {
+        View.apply(this, arguments);
+
+        this._rotateOffset = 0;
+        this._scale = 1;
+        this.id = Entity.register(this); // register entity-id to capture size prior to rendering
+
+        if (this.options.pullToRefresh && this.options.pullToRefreshBackgroundColor) {
+            _createForeground.call(this, _translateBehind.call(this));
+        }
+        _createParticles.call(this, _translateBehind.call(this), this.options.particleCount);
+    }
+    RefreshLoader.prototype = Object.create(View.prototype);
+    RefreshLoader.prototype.constructor = RefreshLoader;
+
+    // default options
+    RefreshLoader.DEFAULT_OPTIONS = {
+        color: '#AAAAAA',
+        particleCount: 10,
+        particleSize: 6,
+        rotateVelocity: 0.09,
+        hideVelocity: 0.05,
+        quickHideVelocity: 0.2,
+        pullToRefresh: false,
+        pullToRefreshBackgroundColor: 'white',
+        pullToRefreshDirection: 1,
+        pullToRefreshFooter: false,
+        pullToRefreshFactor: 1.5 // pull 1.5x the size to activate refresh
+    };
+
+    /**
+     * Helper function for giving all surfaces the correct z-index.
+     */
+    function _translateBehind() {
+        if (this._zNode) {
+            this._zNode = this._zNode.add(new Modifier({
+                transform: Transform.behind
+            }));
+        }
+        else {
+            this._zNode = this.add(new Modifier({
+                transform: Transform.behind
+            }));
+        }
+        return this._zNode;
+    }
+
+    /**
+     * Creates the particles
+     */
+    function _createParticles(node, count) {
+        this._particles = [];
+        var options = {
+            size: [this.options.particleSize, this.options.particleSize],
+            properties: {
+                backgroundColor: this.options.color,
+                borderRadius: '50%'
+            }
+        };
+        for (var i = 0; i < count; i++) {
+            var particle = {
+                surface: new Surface(options),
+                mod: new Modifier({})
+            };
+            this._particles.push(particle);
+            node.add(particle.mod).add(particle.surface);
+        }
+    }
+
+    /**
+     * Creates the foreground behind which the particles can hide in case of pull to refresh.
+     */
+    function _createForeground(node) {
+        this._foreground = {
+            surface: new Surface({
+                size: this.options.size,
+                properties: {
+                    backgroundColor: this.options.pullToRefreshBackgroundColor
+                }
+            }),
+            mod: new Modifier({})
+        };
+        node.add(this._foreground.mod).add(this._foreground.surface);
+    }
+
+     /**
+     * Positions/rotates partciles.
+     */
+    var devicePixelRatio = window.devicePixelRatio || 1;
+    function _positionParticles(renderSize) {
+        var shapeSize = this.options.size[this.options.pullToRefreshDirection] / 2;
+        var visiblePerc = Math.min(Math.max(renderSize[this.options.pullToRefreshDirection] / (this.options.size[this.options.pullToRefreshDirection] * 2), 0), 1);
+        switch (this._pullToRefreshStatus) {
+            case 0:
+            case 1:
+                this._rotateOffset = 0;
+                this._scale = 1;
+                break;
+            case 2:
+                visiblePerc = 1;
+                this._rotateOffset += this.options.rotateVelocity;
+                break;
+            case 3:
+                visiblePerc = 1;
+                this._rotateOffset += this.options.rotateVelocity;
+                this._scale -= this.options.hideVelocity;
+                this._scale = Math.max(0, this._scale);
+                break;
+            case 4:
+                visiblePerc = 1;
+                this._rotateOffset += this.options.rotateVelocity;
+                this._scale -= this.options.quickHideVelocity;
+                this._scale = Math.max(0, this._scale);
+                break;
+        }
+        //console.log('visiblePerc: ' + visiblePerc + ', renderSize: ' + JSON.stringify(renderSize));
+        var rTotal = visiblePerc * Math.PI * 2;
+        for (var i = 0, cnt = this._particles.length; i < cnt; i++) {
+            var mod = this._particles[i].mod;
+            var r = (((i / cnt) * rTotal) - (Math.PI / 2)) + this._rotateOffset + (this.options.pullToRefreshFooter ? Math.PI : 0);
+            var x = Math.cos(r) * (shapeSize / 2) * this._scale;
+            var y = Math.sin(r) * (shapeSize / 2) * this._scale;
+            if (this.options.pullToRefreshDirection) {
+                x += (renderSize[0] / 2);
+                y += shapeSize;
+                y = Math.round(y * devicePixelRatio) / devicePixelRatio;
+            }
+            else {
+                x += shapeSize;
+                y += (renderSize[1] / 2);
+                x = Math.round(x * devicePixelRatio) / devicePixelRatio;
+            }
+            mod.transformFrom(Transform.translate(x, y, 0));
+            mod.opacityFrom(this._scale);
+        }
+    }
+
+    /**
+     * Positions the foreground in front of the particles.
+     */
+    function _positionForeground(renderSize) {
+        if (this._pullToRefreshDirection) {
+            this._foreground.mod.transformFrom(Transform.translate(0, renderSize[1], 0));
+        }
+        else {
+            this._foreground.mod.transformFrom(Transform.translate(renderSize[0], 0, 0));
+        }
+    }
+
+    /**
+     * Ensure that our commit is called passing along the size.
+     * @private
+     */
+    RefreshLoader.prototype.render = function render() {
+        return [this.id, this._node.render()];
+    };
+
+    /**
+     * Position renderables based on size
+     * @private
+     */
+    RefreshLoader.prototype.commit = function commit(context) {
+        _positionParticles.call(this, context.size);
+        if (this._foreground) {
+            _positionForeground.call(this, context.size);
+        }
+        return {};
+    };
+
+    /**
+     * Called by the flex ScrollView whenever the pull-to-refresh renderable is shown
+     * or the state has changed.
+     *
+     * @param {Number} status Status, 0: hidden, 1: pulling, 2: active, 3: completed, 4: hidding
+     */
+    RefreshLoader.prototype.setPullToRefreshStatus = function(status) {
+        this._pullToRefreshStatus = status;
+    };
+
+    /**
+     * Called by the flex ScrollView to get the size on how far to pull before the
+     * refresh is activated.
+     *
+     * @return {Size} Pull to refresh size
+     */
+    RefreshLoader.prototype.getPullToRefreshSize = function() {
+        if (this.options.pullToRefreshDirection) {
+            return [this.options.size[0], this.options.size[1] * this.options.pullToRefreshFactor];
+        }
+        else {
+            return [this.options.size[1] * this.options.pullToRefreshFactor, this.options.size[1]];
+        }
+    };
+
+    module.exports = RefreshLoader;
+});
+
+/**
+ * This Source Code is licensed under the MIT license. If a copy of the
+ * MIT-license was not distributed with this file, You can obtain one at:
+ * http://opensource.org/licenses/mit-license.html.
+ *
+ * @author: Hein Rutjes (IjzerenHein)
+ * @license MIT
+ * @copyright Gloey Apps, 2014/2015
+ */
+
+/**
+ * SizeConstraint makes it possible to set the following constraints on renderables:
+ *
+ * |Option|Description|
+ * |--------|-----------|
+ * |```scale```|Scales the size proportionally to the parent-size (factor).|
+ * |```padding```|Inner width/height padding (pixels).|
+ * |```max```|Sets the maximum-size (pixels).|
+ * |```min```|Sets the minimum-size (pixels).|
+ * |```ratio```|Aspect ratio to enforce (factor).|
+ * |```size```|Default size to use instead of parent-size (pixels).|
+ *
+ * @module
+ */
+define('famous-flex/views/SizeConstraint',['require','exports','module','famous/core/Entity','famous/core/RenderNode','famous/core/OptionsManager'],function(require, exports, module) {
+    'use strict';
+
+    // import dependencies
+    var Entity = require('famous/core/Entity');
+    var RenderNode = require('famous/core/RenderNode');
+    var OptionsManager = require('famous/core/OptionsManager');
+
+    /**
+     * Supported constraints
+     */
+    var Constraints = {
+        scale: 'scale',
+        padding: 'padding',
+        max: 'max',
+        min: 'min',
+        ratio: 'ratio',
+        size: 'size'
+    };
+
+    /**
+     * Updates the internal constraint value and getter-function
+     */
+    function _updateConstraints() {
+        for (var constraint in Constraints) {
+            if (this._constraints[constraint] === undefined) {
+                this._constraints[constraint] = {};
+            }
+            this._constraints[constraint].getter = (this.options[constraint] instanceof Function) ? this.options[constraint] : null;
+            this._constraints[constraint].value = this.options[constraint];
+        }
+    }
+
+    /**
+     * @class
+     * @param {Object} options Options.
+     * @param {Array.Number|Function} [options.scale] Scale
+     * @param {Array.Number|Function} [options.padding] Width/height padding
+     * @param {Array.Number|Function} [options.max] Maximum-size
+     * @param {Array.Number|Function} [options.min] Minimum-size
+     * @param {Array.Number|Function} [options.ratio] Aspect-ratio
+     * @param {Array.Number|Function} [options.size] Default size
+     * @alias module:SizeConstraint
+     */
+    function SizeConstraint(options) {
+        this.options = Object.create(SizeConstraint.DEFAULT_OPTIONS);
+        this._optionsManager = new OptionsManager(this.options);
+        this._constraints = {};
+        _updateConstraints.call(this);
+        if (options) {
+            this.setOptions(options);
+        }
+
+        this._entityId = Entity.register(this);
+
+        this._node = new RenderNode();
+    }
+
+    SizeConstraint.DEFAULT_OPTIONS = {
+        scale: undefined,
+        padding: undefined,
+        max: undefined,
+        min: undefined,
+        ratio: undefined,
+        size: undefined
+    };
+
+    /**
+     * Add a child
+     */
+    SizeConstraint.prototype.add = function add() {
+        return this._node.add.apply(this._node, arguments);
+    };
+
+    /**
+     * Get the size
+     *
+     * @return {Array.Number} Size
+     */
+    SizeConstraint.prototype.getSize = function getSize() {
+        return this._node.getSize.apply(this._node, arguments);
+    };
+
+    /**
+     * Patches the SizeConstraint instance's options with the passed-in ones.
+     *
+     * @param {Options} options An object of configurable options for the SizeConstraint instance.
+     */
+    SizeConstraint.prototype.setOptions = function setOptions(options) {
+        var result = this._optionsManager.setOptions(options);
+        _updateConstraints.call(this);
+        return result;
+    };
+
+    /**
+     * Calculates the modified size based on the parent-size.
+     *
+     * @param {Array.Number} parentSize Size of the parent
+     * @return {Array.Number} [width, height]
+     */
+    SizeConstraint.prototype.calcSize = function(parentSize) {
+
+        // Get options
+        var scale = this._constraints.scale.getter ? this._constraints.scale.getter() : this._constraints.scale.value;
+        var padding = this._constraints.padding.getter ? this._constraints.padding.getter() : this._constraints.padding.value;
+        var max = this._constraints.max.getter ? this._constraints.max.getter() : this._constraints.max.value;
+        var min = this._constraints.min.getter ? this._constraints.min.getter() : this._constraints.min.value;
+        var ratio = this._constraints.ratio.getter ? this._constraints.ratio.getter() : this._constraints.ratio.value;
+        var fallbackSize = this._constraints.size.getter ? this._constraints.size.getter() : this._constraints.size.value;
+        if (!scale && !padding && !max && !min && !ratio && !fallbackSize) {
+            return null;
+        }
+
+        // init
+        var size = [parentSize[0], parentSize[1]];
+
+        // apply fallback-size
+        if (fallbackSize) {
+            size[0] = fallbackSize[0] || size[0];
+            size[1] = fallbackSize[1] || size[1];
+        }
+
+        // apply scale
+        if (scale) {
+            size[0] = size[0] * ((scale[0] !== undefined) ? scale[0] : 1);
+            size[1] = size[1] * ((scale[1] !== undefined) ? scale[1] : 1);
+        }
+
+        // apply scale
+        if (padding) {
+            size[0] = size[0] - ((padding[0] !== undefined) ? padding[0] : 0);
+            size[1] = size[1] - ((padding[1] !== undefined) ? padding[1] : 0);
+        }
+
+        // apply max
+        if (max) {
+            size[0] = Math.min(size[0], max[0] !== undefined ? max[0] : size[0]);
+            size[1] = Math.min(size[1], max[1] !== undefined ? max[1] : size[1]);
+        }
+
+        // apply min
+        if (min) {
+            size[0] = Math.max(size[0], min[0] !== undefined ? min[0] : size[0]);
+            size[1] = Math.max(size[1], min[1] !== undefined ? min[1] : size[1]);
+        }
+
+        // apply ratio
+        if (ratio) {
+            var ratioVal = ratio[0] / ratio[1];
+            if (ratioVal < (size[0] / size[1])) {
+                size[0] = size[1] * ratioVal;
+            }
+            else {
+                size[1] = size[0] / ratioVal;
+            }
+        }
+        return size;
+    };
+
+    /**
+     * Generate a render spec from the contents of this component.
+     *
+     * @private
+     * @method render
+     * @return {Object} Render spec for this component
+     */
+    SizeConstraint.prototype.render = function render() {
+        return this._entityId;
+    };
+
+    /**
+     * @private
+     * @ignore
+     * @method commit
+     * @param {Context} context commit context
+     */
+    SizeConstraint.prototype.commit = function(context) {
+        return {
+            align: this.options.align || context.align,
+            origin: this.options.origin || context.origin,
+            size: this.calcSize(context.size),
+            target: this._node.render()
+        };
+    };
+
+    module.exports = SizeConstraint;
+});
+
+define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLayoutNode','famous-flex/LayoutContext','famous-flex/LayoutController','famous-flex/LayoutNode','famous-flex/LayoutNodeManager','famous-flex/LayoutUtility','famous-flex/ScrollController','famous-flex/VirtualViewSequence','famous-flex/AnimationController','famous-flex/widgets/DatePicker','famous-flex/widgets/TabBar','famous-flex/widgets/TabBarController','famous-flex/layouts/CollectionLayout','famous-flex/layouts/CoverLayout','famous-flex/layouts/CubeLayout','famous-flex/layouts/GridLayout','famous-flex/layouts/HeaderFooterLayout','famous-flex/layouts/ListLayout','famous-flex/layouts/NavBarLayout','famous-flex/layouts/ProportionalLayout','famous-flex/layouts/WheelLayout','famous-flex/helpers/LayoutDockHelper','famous-flex/views/AnimatedIcon','famous-flex/views/AutoFontSizeSurface','famous-flex/views/AutosizeTextareaSurface','famous-flex/views/BkImageSurface','famous-flex/views/KenBurnsContainer','famous-flex/views/RefreshLoader','famous-flex/views/SizeConstraint'],function(require) {
     require('famous-flex/FlexScrollView');
     require('famous-flex/FlowLayoutNode');
     require('famous-flex/LayoutContext');
@@ -10142,5 +11562,13 @@ define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLa
     require('famous-flex/layouts/WheelLayout');
 
     require('famous-flex/helpers/LayoutDockHelper');
+
+    require('famous-flex/views/AnimatedIcon');
+    require('famous-flex/views/AutoFontSizeSurface');
+    require('famous-flex/views/AutosizeTextareaSurface');
+    require('famous-flex/views/BkImageSurface');
+    require('famous-flex/views/KenBurnsContainer');
+    require('famous-flex/views/RefreshLoader');
+    require('famous-flex/views/SizeConstraint');
 });
 

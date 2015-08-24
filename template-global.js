@@ -31,3 +31,12 @@ famousflex.layouts.WheelLayout = require('./src/layouts/WheelLayout');
 
 famousflex.helpers = famousflex.helpers || {};
 famousflex.helpers.LayoutDockHelper = require('./src/helpers/LayoutDockHelper');
+
+famousflex.views = famousflex.views || {};
+famousflex.views.AnimatedIcon = require('./src/views/AnimatedIcon');
+famousflex.views.AutoFontSizeSurface = require('./src/views/AutoFontSizeSurface');
+famousflex.views.AutosizeTextareaSurface = require('./src/views/AutosizeTextareaSurface');
+famousflex.views.BkImageSurface = require('./src/views/BkImageSurface');
+famousflex.views.KenBurnsContainer = require('./src/views/KenBurnsContainer');
+famousflex.views.RefreshLoader = require('./src/views/RefreshLoader');
+famousflex.views.SizeConstraint = require('./src/views/SizeConstraint');

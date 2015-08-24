@@ -76,6 +76,7 @@
     "famous/core/OptionsManager": "global:famous.core.OptionsManager",
     "famous/utilities/Utility": "global:famous.utilities.Utility",
     "famous/surfaces/ContainerSurface": "global:famous.surfaces.ContainerSurface",
+    "famous/surfaces/TextareaSurface": "global:famous.surfaces.TextareaSurface",
     "famous/core/EventHandler": "global:famous.core.EventHandler",
     "famous/core/Transform": "global:famous.core.Transform",
     "famous/core/View": "global:famous.core.View",
