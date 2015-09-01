@@ -550,6 +550,9 @@ define(function(require, exports, module) {
             item.options.transfer.items = (options.transfer ? options.transfer.items : undefined) || item.options.transfer.items;
             item.options.transfer.zIndex = (options.transfer && (options.transfer.zIndex !== undefined)) ? options.transfer.zIndex : item.options.transfer.zIndex;
             item.options.transfer.fastResize = (options.transfer && (options.transfer.fastResize !== undefined)) ? options.transfer.fastResize : item.options.transfer.fastResize;
+
+            item.options.onShow = options.onShow ? options.onShow : item.options.onShow;
+            item.options.onHide = options.onHide ? options.onHide : item.options.onHide;
         }
         item.showCallback = function() {
             item.showCallback = undefined;
@@ -578,14 +581,17 @@ define(function(require, exports, module) {
                     (prevItem.state === ItemState.HIDING)) {
                     if (prevItem && (prevItem.state === ItemState.VISIBLE)) {
                         prevItem.state = ItemState.HIDE;
+                        if (prevItem.options.onHide) prevItem.options.onHide();
                     }
                     item.state = ItemState.SHOW;
+                    if (item.options.onShow) item.options.onShow();
                     invalidated = true;
                 }
                 break;
             }
             else if ((item.state === ItemState.VISIBLE) && item.hide) {
                 item.state = ItemState.HIDE;
+                if (item.options.onHide) item.options.onHide();
             }
             if ((item.state === ItemState.SHOW) || (item.state === ItemState.HIDE)) {
                 this.layout.reflowLayout();
@@ -642,6 +648,8 @@ define(function(require, exports, module) {
      * @param {Object} [options] Options.
      * @param {Object} [options.transition] Transition options for both show & hide.
      * @param {Function} [options.animation] Animation function for both show & hide.
+     * @param {Function} [options.onShow] function to call just before show.
+     * @param {Function} [options.onHide] function to call just before hide.
      * @param {Object} [options.show] Show specific options.
      * @param {Object} [options.show.transition] Show specific transition options.
      * @param {Function} [options.show.animation] Show specific animation function.
