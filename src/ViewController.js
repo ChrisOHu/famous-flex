@@ -12,6 +12,7 @@ define(function(require, exports, module) {
     var AnimationController = require('./AnimationController');
     var TouchSync = require('famous/inputs/TouchSync');
     var StateModifier = require('famous/modifiers/StateModifier');
+    var Transform = require('famous/core/Transform');
 
     /**
      * @class
@@ -35,7 +36,10 @@ define(function(require, exports, module) {
     ViewController.prototype.constructor = ViewController;
 
     ViewController.DEFAULT_OPTIONS = {
-      velocityThreshold: 100,
+      // pixels per millisecond
+      velocityThreshold: 50,
+      revertDeltaDistance: 10,
+      fireDeltaDistance: 10,
     };
 
     var STATES = {
@@ -59,17 +63,16 @@ define(function(require, exports, module) {
 
       if (this._trackingPointer === event.touch) {
         var velocity = event.velocity;
-        var diffX = event.delta;
+        var position = event.position;
+        var delta = event.delta;
 
         switch (this._state) {
           case STATES.STARTED:
-            if (diffX > 0) {
-              this._state = STATES.TRACKING;
-              _updateViews(diffX, velocity);
-            }
+            this._state = STATES.TRACKING;
+            _updateViews(delta, position, velocity);
             break;
           case STATES.TRACKING:
-            _updateViews(diffX, velocity);
+            _updateViews(delta, position, velocity);
             break;
           case STATES.FIRED:
           default:
@@ -95,14 +98,35 @@ define(function(require, exports, module) {
       }
     }
 
-    function _updateViews(diff, velocity) {
-      var transDistance;
-      var transOpacity;
+    function _updateViews(delta, position, velocity) {
+      if (Math.abs(velocity) >= this.options.velocityThreshold) {
+        if (velocity > 0) {
+          _popViewStack.call(this);
+        } else {
+          _revertTracking.call(this);
+        }
+      } else if (delta < 0 && position <= this.options.revertDeltaDistance) {
+        _revertTracking.call(this);
+      } else if (delta > 0 && (this._size[0] - position) >= this.options.fireDeltaDistance) {
+        _popViewStack.call(this);
+      } else {
+        var item = this._viewStack[this._viewStack.length-1];
+        item.mod.setTransform(Transform.translate(position, 0, 0));
+      }
     }
 
-    function _switchToPreView() {
+    function _popViewStack() {
+      this._state = STATES.FIRED;
+      this.hide(null, function() {
+        this._state = STATES.IDLE;
+      });
     }
 
     function _revertTracking() {
+      this._state = STATES.FIRED;
+      this.show(null, function() {
+        this._state = STATES.IDLE;
+      });
     }
 });
+
