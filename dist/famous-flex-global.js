@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.4
-* @generated 24-08-2015
+* @generated 03-09-2015
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -434,6 +434,8 @@ function _setItemOptions(item, options, callback) {
         item.options.transfer.items = (options.transfer ? options.transfer.items : undefined) || item.options.transfer.items;
         item.options.transfer.zIndex = options.transfer && options.transfer.zIndex !== undefined ? options.transfer.zIndex : item.options.transfer.zIndex;
         item.options.transfer.fastResize = options.transfer && options.transfer.fastResize !== undefined ? options.transfer.fastResize : item.options.transfer.fastResize;
+        item.options.onShow = options.onShow ? options.onShow : item.options.onShow;
+        item.options.onHide = options.onHide ? options.onHide : item.options.onHide;
     }
     item.showCallback = function () {
         item.showCallback = undefined;
@@ -456,13 +458,22 @@ function _updateState() {
             if (!prevItem || prevItem.state === ItemState.VISIBLE || prevItem.state === ItemState.HIDING) {
                 if (prevItem && prevItem.state === ItemState.VISIBLE) {
                     prevItem.state = ItemState.HIDE;
+                    if (prevItem.options.onHide) {
+                        prevItem.options.onHide();
+                    }
                 }
                 item.state = ItemState.SHOW;
+                if (item.options.onShow) {
+                    item.options.onShow();
+                }
                 invalidated = true;
             }
             break;
         } else if (item.state === ItemState.VISIBLE && item.hide) {
             item.state = ItemState.HIDE;
+            if (item.options.onHide) {
+                item.options.onHide();
+            }
         }
         if (item.state === ItemState.SHOW || item.state === ItemState.HIDE) {
             this.layout.reflowLayout();
@@ -1073,7 +1084,7 @@ FlexScrollView.prototype.commit = function (context) {
     return result;
 };
 module.exports = FlexScrollView;
-},{"./LayoutUtility":8,"./ScrollController":9,"./layouts/ListLayout":17}],3:[function(require,module,exports){
+},{"./LayoutUtility":8,"./ScrollController":9,"./layouts/ListLayout":18}],3:[function(require,module,exports){
 (function (global){
 var OptionsManager = typeof window !== 'undefined' ? window['famous']['core']['OptionsManager'] : typeof global !== 'undefined' ? global['famous']['core']['OptionsManager'] : null;
 var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
@@ -2193,7 +2204,7 @@ LayoutController.prototype.cleanup = function (context) {
 };
 module.exports = LayoutController;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./FlowLayoutNode":3,"./LayoutNode":6,"./LayoutNodeManager":7,"./LayoutUtility":8,"./helpers/LayoutDockHelper":11}],6:[function(require,module,exports){
+},{"./FlowLayoutNode":3,"./LayoutNode":6,"./LayoutNodeManager":7,"./LayoutUtility":8,"./helpers/LayoutDockHelper":12}],6:[function(require,module,exports){
 (function (global){
 var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
 var LayoutUtility = require('./LayoutUtility');
@@ -4359,6 +4370,115 @@ module.exports = ScrollController;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./FlowLayoutNode":3,"./LayoutController":5,"./LayoutNode":6,"./LayoutNodeManager":7,"./LayoutUtility":8}],10:[function(require,module,exports){
 (function (global){
+var AnimationController = require('./AnimationController');
+var TouchSync = typeof window !== 'undefined' ? window['famous']['inputs']['TouchSync'] : typeof global !== 'undefined' ? global['famous']['inputs']['TouchSync'] : null;
+var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers']['StateModifier'] : typeof global !== 'undefined' ? global['famous']['modifiers']['StateModifier'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+function ViewController(options) {
+    AnimationController.apply(this, arguments);
+    this._state = STATES.IDLE;
+    this._trackingPointer = undefined;
+    this._touchSync = new TouchSync({ direction: TouchSync.DIRECTION_X });
+    this._stateModifier = new StateModifier();
+    this._eventInput.pipe(this._touchSync);
+    this._touchSync.on('start', _touchStart.bind(this));
+    this._touchSync.on('update', _touchUpdate.bind(this));
+    this._touchSync.on('end', _touchEnd.bind(this));
+}
+ViewController.prototype = Object.create(AnimationController.prototype);
+ViewController.prototype.constructor = ViewController;
+ViewController.DEFAULT_OPTIONS = {
+    velocityThreshold: 50,
+    revertDeltaDistance: 10,
+    fireDeltaDistance: 10
+};
+var STATES = {
+        IDLE: 0,
+        STARTED: 1,
+        TRACKING: 2,
+        FIRED: 3
+    };
+function _touchStart(event) {
+    if (this._viewStack.length < 2) {
+        return;
+    }
+    if (!this._trackingPointer) {
+        this._trackingPointer = event.touch;
+        this._state = STATES.STARTED;
+    }
+}
+function _touchUpdate(event) {
+    if (!this._trackingPointer) {
+        this._trackingPointer = event.touch;
+    }
+    if (this._trackingPointer === event.touch) {
+        var velocity = event.velocity;
+        var position = event.position;
+        var delta = event.delta;
+        switch (this._state) {
+        case STATES.STARTED:
+            this._state = STATES.TRACKING;
+            _updateViews(delta, position, velocity);
+            break;
+        case STATES.TRACKING:
+            _updateViews(delta, position, velocity);
+            break;
+        case STATES.FIRED:
+        default:
+            break;
+        }
+    }
+}
+function _touchEnd(event) {
+    if (this._trackingPointer === event.touch) {
+        switch (this._state) {
+        case STATES.STARTED:
+            this._state = STATES.IDLE;
+            this._trackingPointer = undefined;
+            break;
+        case STATES.TRACKING:
+            _revertTracking();
+            break;
+        case STATES.FIRED:
+        default:
+            break;
+        }
+    }
+}
+function _updateViews(delta, position, velocity) {
+    if (Math.abs(velocity) >= this.options.velocityThreshold) {
+        if (velocity > 0) {
+            _popViewStack.call(this);
+        } else {
+            _revertTracking.call(this);
+        }
+    } else if (delta < 0 && position <= this.options.revertDeltaDistance) {
+        _revertTracking.call(this);
+    } else if (delta > 0 && this._size[0] - position >= this.options.fireDeltaDistance) {
+        _popViewStack.call(this);
+    } else {
+        var item = this._viewStack[this._viewStack.length - 1];
+        var preItem = this._viewStack[this._viewStack.length - 2];
+        item.mod.setTransform(Transform.translate(position, 0, 0));
+        preItem.mod.setOpacity(position / this._size[0]);
+    }
+}
+function _popViewStack() {
+    this._state = STATES.FIRED;
+    this.hide(null, function () {
+        this._state = STATES.IDLE;
+    });
+}
+function _revertTracking() {
+    this._state = STATES.FIRED;
+    this.show(null, function () {
+        this._state = STATES.IDLE;
+    });
+}
+module.exports = ViewController;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./AnimationController":1}],11:[function(require,module,exports){
+(function (global){
 var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
 function VirtualViewSequence(options) {
     options = options || {};
@@ -4483,7 +4603,7 @@ VirtualViewSequence.prototype.swap = function () {
 };
 module.exports = VirtualViewSequence;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var LayoutUtility = require('../LayoutUtility');
 function LayoutDockHelper(context, options) {
     var size = context.size;
@@ -4686,7 +4806,7 @@ LayoutDockHelper.prototype.get = function () {
 };
 LayoutUtility.registerHelper('dock', LayoutDockHelper);
 module.exports = LayoutDockHelper;
-},{"../LayoutUtility":8}],12:[function(require,module,exports){
+},{"../LayoutUtility":8}],13:[function(require,module,exports){
 (function (global){
 var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
@@ -4904,7 +5024,7 @@ CollectionLayout.Name = 'CollectionLayout';
 CollectionLayout.Description = 'Multi-cell collection-layout with margins & spacing';
 module.exports = CollectionLayout;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../LayoutUtility":8}],13:[function(require,module,exports){
+},{"../LayoutUtility":8}],14:[function(require,module,exports){
 (function (global){
 var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
@@ -5013,7 +5133,7 @@ function CoverLayout(context, options) {
 CoverLayout.Capabilities = capabilities;
 module.exports = CoverLayout;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 module.exports = function CubeLayout(context, options) {
     var itemSize = options.itemSize;
     context.set(context.next(), {
@@ -5085,12 +5205,12 @@ module.exports = function CubeLayout(context, options) {
         ]
     });
 };
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 if (console.warn) {
     console.warn('GridLayout has been deprecated and will be removed in the future, use CollectionLayout instead');
 }
 module.exports = require('./CollectionLayout');
-},{"./CollectionLayout":12}],16:[function(require,module,exports){
+},{"./CollectionLayout":13}],17:[function(require,module,exports){
 var LayoutDockHelper = require('../helpers/LayoutDockHelper');
 module.exports = function HeaderFooterLayout(context, options) {
     var dock = new LayoutDockHelper(context, options);
@@ -5098,7 +5218,7 @@ module.exports = function HeaderFooterLayout(context, options) {
     dock.bottom('footer', options.footerSize !== undefined ? options.footerSize : options.footerHeight);
     dock.fill('content');
 };
-},{"../helpers/LayoutDockHelper":11}],17:[function(require,module,exports){
+},{"../helpers/LayoutDockHelper":12}],18:[function(require,module,exports){
 (function (global){
 var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
@@ -5278,7 +5398,7 @@ ListLayout.Name = 'ListLayout';
 ListLayout.Description = 'List-layout with margins, spacing and sticky headers';
 module.exports = ListLayout;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../LayoutUtility":8}],18:[function(require,module,exports){
+},{"../LayoutUtility":8}],19:[function(require,module,exports){
 var LayoutDockHelper = require('../helpers/LayoutDockHelper');
 module.exports = function NavBarLayout(context, options) {
     var dock = new LayoutDockHelper(context, {
@@ -5334,7 +5454,7 @@ module.exports = function NavBarLayout(context, options) {
         });
     }
 };
-},{"../helpers/LayoutDockHelper":11}],19:[function(require,module,exports){
+},{"../helpers/LayoutDockHelper":12}],20:[function(require,module,exports){
 (function (global){
 var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
@@ -5391,7 +5511,7 @@ function ProportionalLayout(context, options) {
 ProportionalLayout.Capabilities = capabilities;
 module.exports = ProportionalLayout;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (global){
 var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
@@ -5511,7 +5631,7 @@ TabBarLayout.Name = 'TabBarLayout';
 TabBarLayout.Description = 'TabBar widget layout';
 module.exports = TabBarLayout;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../LayoutUtility":8}],21:[function(require,module,exports){
+},{"../LayoutUtility":8}],22:[function(require,module,exports){
 (function (global){
 var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
@@ -5622,7 +5742,7 @@ WheelLayout.Name = 'WheelLayout';
 WheelLayout.Description = 'Spinner-wheel/slot-machine layout';
 module.exports = WheelLayout;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 (function (global){
 'use strict';
 var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
@@ -5745,7 +5865,7 @@ AnimatedIcon.prototype.getShape = function (shapeIndex, transition) {
 };
 module.exports = AnimatedIcon;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 (function (global){
 var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
 var Timer = typeof window !== 'undefined' ? window['famous']['utilities']['Timer'] : typeof global !== 'undefined' ? global['famous']['utilities']['Timer'] : null;
@@ -5903,7 +6023,7 @@ AutoFontSizeSurface.prototype.getFontSizeUnit = function () {
 };
 module.exports = AutoFontSizeSurface;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 (function (global){
 'use strict';
 var TextareaSurface = typeof window !== 'undefined' ? window['famous']['surfaces']['TextareaSurface'] : typeof global !== 'undefined' ? global['famous']['surfaces']['TextareaSurface'] : null;
@@ -6051,7 +6171,7 @@ AutosizeTextareaSurface.prototype.deploy = function deploy(target) {
 };
 module.exports = AutosizeTextareaSurface;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 (function (global){
 'use strict';
 var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
@@ -6150,7 +6270,7 @@ BkImageSurface.prototype.recall = function recall(target) {
 };
 module.exports = BkImageSurface;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 (function (global){
 'use strict';
 var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers']['StateModifier'] : typeof global !== 'undefined' ? global['famous']['modifiers']['StateModifier'] : null;
@@ -6217,7 +6337,7 @@ KenBurnsContainer.prototype.delay = function (duration, callback) {
 };
 module.exports = KenBurnsContainer;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (global){
 'use strict';
 var Entity = typeof window !== 'undefined' ? window['famous']['core']['Entity'] : typeof global !== 'undefined' ? global['famous']['core']['Entity'] : null;
@@ -6373,7 +6493,7 @@ RefreshLoader.prototype.getPullToRefreshSize = function () {
 };
 module.exports = RefreshLoader;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 (function (global){
 'use strict';
 var Entity = typeof window !== 'undefined' ? window['famous']['core']['Entity'] : typeof global !== 'undefined' ? global['famous']['core']['Entity'] : null;
@@ -6483,7 +6603,7 @@ SizeConstraint.prototype.commit = function (context) {
 };
 module.exports = SizeConstraint;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 (function (global){
 var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
 var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
@@ -6773,7 +6893,7 @@ function _createOverlay() {
 }
 module.exports = DatePicker;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../LayoutController":5,"../LayoutUtility":8,"../ScrollController":9,"../VirtualViewSequence":10,"../layouts/ProportionalLayout":19,"../layouts/WheelLayout":21,"./DatePickerComponents":30}],30:[function(require,module,exports){
+},{"../LayoutController":5,"../LayoutUtility":8,"../ScrollController":9,"../VirtualViewSequence":11,"../layouts/ProportionalLayout":20,"../layouts/WheelLayout":22,"./DatePickerComponents":31}],31:[function(require,module,exports){
 (function (global){
 var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
 var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
@@ -7063,7 +7183,7 @@ module.exports = {
     Millisecond: Millisecond
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 (function (global){
 var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
 var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
@@ -7227,7 +7347,7 @@ TabBar.prototype.getSize = function () {
 };
 module.exports = TabBar;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../LayoutController":5,"../layouts/TabBarLayout":20}],32:[function(require,module,exports){
+},{"../LayoutController":5,"../layouts/TabBarLayout":21}],33:[function(require,module,exports){
 (function (global){
 var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
 var AnimationController = require('../AnimationController');
@@ -7357,7 +7477,7 @@ TabBarController.prototype.getSelectedItemIndex = function () {
 };
 module.exports = TabBarController;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../AnimationController":1,"../LayoutController":5,"../helpers/LayoutDockHelper":11,"./TabBar":31}],33:[function(require,module,exports){
+},{"../AnimationController":1,"../LayoutController":5,"../helpers/LayoutDockHelper":12,"./TabBar":32}],34:[function(require,module,exports){
 if (typeof famousflex === 'undefined') {
     famousflex = {};
 }
@@ -7372,6 +7492,7 @@ famousflex.LayoutUtility = require('./src/LayoutUtility');
 famousflex.ScrollController = require('./src/ScrollController');
 famousflex.VirtualViewSequence = require('./src/VirtualViewSequence');
 famousflex.AnimationController = require('./src/AnimationController');
+famousflex.ViewController = require('./src/ViewController');
 
 famousflex.widgets = famousflex.widgets || {};
 famousflex.widgets.DatePicker = require('./src/widgets/DatePicker');
@@ -7401,4 +7522,4 @@ famousflex.views.KenBurnsContainer = require('./src/views/KenBurnsContainer');
 famousflex.views.RefreshLoader = require('./src/views/RefreshLoader');
 famousflex.views.SizeConstraint = require('./src/views/SizeConstraint');
 
-},{"./src/AnimationController":1,"./src/FlexScrollView":2,"./src/FlowLayoutNode":3,"./src/LayoutContext":4,"./src/LayoutController":5,"./src/LayoutNode":6,"./src/LayoutNodeManager":7,"./src/LayoutUtility":8,"./src/ScrollController":9,"./src/VirtualViewSequence":10,"./src/helpers/LayoutDockHelper":11,"./src/layouts/CollectionLayout":12,"./src/layouts/CoverLayout":13,"./src/layouts/CubeLayout":14,"./src/layouts/GridLayout":15,"./src/layouts/HeaderFooterLayout":16,"./src/layouts/ListLayout":17,"./src/layouts/NavBarLayout":18,"./src/layouts/ProportionalLayout":19,"./src/layouts/WheelLayout":21,"./src/views/AnimatedIcon":22,"./src/views/AutoFontSizeSurface":23,"./src/views/AutosizeTextareaSurface":24,"./src/views/BkImageSurface":25,"./src/views/KenBurnsContainer":26,"./src/views/RefreshLoader":27,"./src/views/SizeConstraint":28,"./src/widgets/DatePicker":29,"./src/widgets/TabBar":31,"./src/widgets/TabBarController":32}]},{},[33]);
+},{"./src/AnimationController":1,"./src/FlexScrollView":2,"./src/FlowLayoutNode":3,"./src/LayoutContext":4,"./src/LayoutController":5,"./src/LayoutNode":6,"./src/LayoutNodeManager":7,"./src/LayoutUtility":8,"./src/ScrollController":9,"./src/ViewController":10,"./src/VirtualViewSequence":11,"./src/helpers/LayoutDockHelper":12,"./src/layouts/CollectionLayout":13,"./src/layouts/CoverLayout":14,"./src/layouts/CubeLayout":15,"./src/layouts/GridLayout":16,"./src/layouts/HeaderFooterLayout":17,"./src/layouts/ListLayout":18,"./src/layouts/NavBarLayout":19,"./src/layouts/ProportionalLayout":20,"./src/layouts/WheelLayout":22,"./src/views/AnimatedIcon":23,"./src/views/AutoFontSizeSurface":24,"./src/views/AutosizeTextareaSurface":25,"./src/views/BkImageSurface":26,"./src/views/KenBurnsContainer":27,"./src/views/RefreshLoader":28,"./src/views/SizeConstraint":29,"./src/widgets/DatePicker":30,"./src/widgets/TabBar":32,"./src/widgets/TabBarController":33}]},{},[34]);

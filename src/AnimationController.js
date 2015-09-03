@@ -581,17 +581,23 @@ define(function(require, exports, module) {
                     (prevItem.state === ItemState.HIDING)) {
                     if (prevItem && (prevItem.state === ItemState.VISIBLE)) {
                         prevItem.state = ItemState.HIDE;
-                        if (prevItem.options.onHide) prevItem.options.onHide();
+                        if (prevItem.options.onHide) {
+                            prevItem.options.onHide();
+                        }
                     }
                     item.state = ItemState.SHOW;
-                    if (item.options.onShow) item.options.onShow();
+                    if (item.options.onShow) {
+                        item.options.onShow();
+                    }
                     invalidated = true;
                 }
                 break;
             }
             else if ((item.state === ItemState.VISIBLE) && item.hide) {
                 item.state = ItemState.HIDE;
-                if (item.options.onHide) item.options.onHide();
+                if (item.options.onHide) {
+                    item.options.onHide();
+                }
             }
             if ((item.state === ItemState.SHOW) || (item.state === ItemState.HIDE)) {
                 this.layout.reflowLayout();

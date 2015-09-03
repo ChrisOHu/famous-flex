@@ -12,6 +12,7 @@ famousflex.LayoutUtility = require('./src/LayoutUtility');
 famousflex.ScrollController = require('./src/ScrollController');
 famousflex.VirtualViewSequence = require('./src/VirtualViewSequence');
 famousflex.AnimationController = require('./src/AnimationController');
+famousflex.ViewController = require('./src/ViewController');
 
 famousflex.widgets = famousflex.widgets || {};
 famousflex.widgets.DatePicker = require('./src/widgets/DatePicker');

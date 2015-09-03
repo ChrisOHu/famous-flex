@@ -18,7 +18,7 @@ define(function(require, exports, module) {
      * @class
      * @param {Object} [options] Configurable options.
      * @alias module:ViewController
-*/
+     */
     function ViewController(options) {
         AnimationController.apply(this, arguments);
 
@@ -39,14 +39,14 @@ define(function(require, exports, module) {
         // pixels per millisecond
         velocityThreshold: 50,
         revertDeltaDistance: 10,
-        fireDeltaDistance: 10,
+        fireDeltaDistance: 10
     };
 
     var STATES = {
         IDLE     : 0,
         STARTED  : 1,
         TRACKING : 2,
-        FIRED    : 3,
+        FIRED    : 3
     };
 
     function _touchStart(event) {
@@ -134,5 +134,7 @@ define(function(require, exports, module) {
             this._state = STATES.IDLE;
         });
     }
+
+    module.exports = ViewController;
 });
 

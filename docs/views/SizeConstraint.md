@@ -15,10 +15,10 @@ SizeConstraint makes it possible to set the following constraints on renderables
 * [SizeConstraint](#module_SizeConstraint)
   * [SizeConstraint](#exp_module_SizeConstraint--SizeConstraint) ⏏
     * [new SizeConstraint(options)](#new_module_SizeConstraint--SizeConstraint_new)
-    * [.add()](#module_SizeConstraint--SizeConstraint+add)
-    * [.getSize()](#module_SizeConstraint--SizeConstraint+getSize) ⇒ <code>Array.Number</code>
-    * [.setOptions(options)](#module_SizeConstraint--SizeConstraint+setOptions)
-    * [.calcSize(parentSize)](#module_SizeConstraint--SizeConstraint+calcSize) ⇒ <code>Array.Number</code>
+    * [.add()](#module_SizeConstraint--SizeConstraint#add)
+    * [.getSize()](#module_SizeConstraint--SizeConstraint#getSize) ⇒ <code>Array.Number</code>
+    * [.setOptions(options)](#module_SizeConstraint--SizeConstraint#setOptions)
+    * [.calcSize(parentSize)](#module_SizeConstraint--SizeConstraint#calcSize) ⇒ <code>Array.Number</code>
 
 <a name="exp_module_SizeConstraint--SizeConstraint"></a>
 ### SizeConstraint ⏏
@@ -36,18 +36,18 @@ SizeConstraint makes it possible to set the following constraints on renderables
 | [options.ratio] | <code>Array.Number</code> &#124; <code>function</code> | Aspect-ratio |
 | [options.size] | <code>Array.Number</code> &#124; <code>function</code> | Default size |
 
-<a name="module_SizeConstraint--SizeConstraint+add"></a>
+<a name="module_SizeConstraint--SizeConstraint#add"></a>
 #### sizeConstraint.add()
 Add a child
 
 **Kind**: instance method of <code>[SizeConstraint](#exp_module_SizeConstraint--SizeConstraint)</code>  
-<a name="module_SizeConstraint--SizeConstraint+getSize"></a>
+<a name="module_SizeConstraint--SizeConstraint#getSize"></a>
 #### sizeConstraint.getSize() ⇒ <code>Array.Number</code>
 Get the size
 
 **Kind**: instance method of <code>[SizeConstraint](#exp_module_SizeConstraint--SizeConstraint)</code>  
 **Returns**: <code>Array.Number</code> - Size  
-<a name="module_SizeConstraint--SizeConstraint+setOptions"></a>
+<a name="module_SizeConstraint--SizeConstraint#setOptions"></a>
 #### sizeConstraint.setOptions(options)
 Patches the SizeConstraint instance's options with the passed-in ones.
 
@@ -57,7 +57,7 @@ Patches the SizeConstraint instance's options with the passed-in ones.
 | --- | --- | --- |
 | options | <code>Options</code> | An object of configurable options for the SizeConstraint instance. |
 
-<a name="module_SizeConstraint--SizeConstraint+calcSize"></a>
+<a name="module_SizeConstraint--SizeConstraint#calcSize"></a>
 #### sizeConstraint.calcSize(parentSize) ⇒ <code>Array.Number</code>
 Calculates the modified size based on the parent-size.
 

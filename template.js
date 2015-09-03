@@ -9,6 +9,7 @@ define(function(require) {
     require('famous-flex/ScrollController');
     require('famous-flex/VirtualViewSequence');
     require('famous-flex/AnimationController');
+    require('famous-flex/ViewController');
 
     require('famous-flex/widgets/DatePicker');
     require('famous-flex/widgets/TabBar');

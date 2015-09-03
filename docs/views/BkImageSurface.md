@@ -11,14 +11,14 @@ from the image.
   * [BkImageSurface](#exp_module_BkImageSurface--BkImageSurface) ⏏
     * [new BkImageSurface(options)](#new_module_BkImageSurface--BkImageSurface_new)
     * _instance_
-      * [.setContent(imageUrl)](#module_BkImageSurface--BkImageSurface+setContent)
-      * [.getContent()](#module_BkImageSurface--BkImageSurface+getContent) ⇒ <code>String</code>
-      * [.setSizeMode(sizeMode)](#module_BkImageSurface--BkImageSurface+setSizeMode)
-      * [.getSizeMode()](#module_BkImageSurface--BkImageSurface+getSizeMode) ⇒ <code>SizeMode</code> &#124; <code>String</code>
-      * [.setPositionMode(positionMode)](#module_BkImageSurface--BkImageSurface+setPositionMode)
-      * [.getPositionMode()](#module_BkImageSurface--BkImageSurface+getPositionMode) ⇒ <code>RepeatMode</code> &#124; <code>String</code>
-      * [.setRepeatMode(repeatMode)](#module_BkImageSurface--BkImageSurface+setRepeatMode)
-      * [.getRepeatMode()](#module_BkImageSurface--BkImageSurface+getRepeatMode) ⇒ <code>RepeatMode</code> &#124; <code>String</code>
+      * [.setContent(imageUrl)](#module_BkImageSurface--BkImageSurface#setContent)
+      * [.getContent()](#module_BkImageSurface--BkImageSurface#getContent) ⇒ <code>String</code>
+      * [.setSizeMode(sizeMode)](#module_BkImageSurface--BkImageSurface#setSizeMode)
+      * [.getSizeMode()](#module_BkImageSurface--BkImageSurface#getSizeMode) ⇒ <code>SizeMode</code> &#124; <code>String</code>
+      * [.setPositionMode(positionMode)](#module_BkImageSurface--BkImageSurface#setPositionMode)
+      * [.getPositionMode()](#module_BkImageSurface--BkImageSurface#getPositionMode) ⇒ <code>RepeatMode</code> &#124; <code>String</code>
+      * [.setRepeatMode(repeatMode)](#module_BkImageSurface--BkImageSurface#setRepeatMode)
+      * [.getRepeatMode()](#module_BkImageSurface--BkImageSurface#getRepeatMode) ⇒ <code>RepeatMode</code> &#124; <code>String</code>
     * _static_
       * [.SizeMode](#module_BkImageSurface--BkImageSurface.SizeMode)
       * [.PositionMode](#module_BkImageSurface--BkImageSurface.PositionMode)
@@ -38,7 +38,7 @@ from the image.
 | [options.positionMode] | <code>PositionMode</code> &#124; <code>String</code> | Position-mode to use. |
 | [options.repeatMode] | <code>RepeatMode</code> &#124; <code>String</code> | Repeat-mode to use. |
 
-<a name="module_BkImageSurface--BkImageSurface+setContent"></a>
+<a name="module_BkImageSurface--BkImageSurface#setContent"></a>
 #### bkImageSurface.setContent(imageUrl)
 **Kind**: instance method of <code>[BkImageSurface](#exp_module_BkImageSurface--BkImageSurface)</code>  
 
@@ -46,11 +46,11 @@ from the image.
 | --- | --- | --- |
 | imageUrl | <code>String</code> | Image-url, when set will cause re-rendering |
 
-<a name="module_BkImageSurface--BkImageSurface+getContent"></a>
+<a name="module_BkImageSurface--BkImageSurface#getContent"></a>
 #### bkImageSurface.getContent() ⇒ <code>String</code>
 **Kind**: instance method of <code>[BkImageSurface](#exp_module_BkImageSurface--BkImageSurface)</code>  
 **Returns**: <code>String</code> - Image-url  
-<a name="module_BkImageSurface--BkImageSurface+setSizeMode"></a>
+<a name="module_BkImageSurface--BkImageSurface#setSizeMode"></a>
 #### bkImageSurface.setSizeMode(sizeMode)
 **Kind**: instance method of <code>[BkImageSurface](#exp_module_BkImageSurface--BkImageSurface)</code>  
 
@@ -58,11 +58,11 @@ from the image.
 | --- | --- | --- |
 | sizeMode | <code>SizeMode</code> &#124; <code>String</code> | Sizing-mode, when set will cause re-rendering |
 
-<a name="module_BkImageSurface--BkImageSurface+getSizeMode"></a>
+<a name="module_BkImageSurface--BkImageSurface#getSizeMode"></a>
 #### bkImageSurface.getSizeMode() ⇒ <code>SizeMode</code> &#124; <code>String</code>
 **Kind**: instance method of <code>[BkImageSurface](#exp_module_BkImageSurface--BkImageSurface)</code>  
 **Returns**: <code>SizeMode</code> &#124; <code>String</code> - Size-mode  
-<a name="module_BkImageSurface--BkImageSurface+setPositionMode"></a>
+<a name="module_BkImageSurface--BkImageSurface#setPositionMode"></a>
 #### bkImageSurface.setPositionMode(positionMode)
 **Kind**: instance method of <code>[BkImageSurface](#exp_module_BkImageSurface--BkImageSurface)</code>  
 
@@ -70,11 +70,11 @@ from the image.
 | --- | --- | --- |
 | positionMode | <code>PositionMode</code> &#124; <code>String</code> | Position-mode, when set will cause re-rendering |
 
-<a name="module_BkImageSurface--BkImageSurface+getPositionMode"></a>
+<a name="module_BkImageSurface--BkImageSurface#getPositionMode"></a>
 #### bkImageSurface.getPositionMode() ⇒ <code>RepeatMode</code> &#124; <code>String</code>
 **Kind**: instance method of <code>[BkImageSurface](#exp_module_BkImageSurface--BkImageSurface)</code>  
 **Returns**: <code>RepeatMode</code> &#124; <code>String</code> - Position-mode  
-<a name="module_BkImageSurface--BkImageSurface+setRepeatMode"></a>
+<a name="module_BkImageSurface--BkImageSurface#setRepeatMode"></a>
 #### bkImageSurface.setRepeatMode(repeatMode)
 **Kind**: instance method of <code>[BkImageSurface](#exp_module_BkImageSurface--BkImageSurface)</code>  
 
@@ -82,7 +82,7 @@ from the image.
 | --- | --- | --- |
 | repeatMode | <code>RepeatMode</code> &#124; <code>String</code> | Repeat-mode, when set will cause re-rendering |
 
-<a name="module_BkImageSurface--BkImageSurface+getRepeatMode"></a>
+<a name="module_BkImageSurface--BkImageSurface#getRepeatMode"></a>
 #### bkImageSurface.getRepeatMode() ⇒ <code>RepeatMode</code> &#124; <code>String</code>
 **Kind**: instance method of <code>[BkImageSurface](#exp_module_BkImageSurface--BkImageSurface)</code>  
 **Returns**: <code>RepeatMode</code> &#124; <code>String</code> - Repeat-mode  

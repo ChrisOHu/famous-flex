@@ -87,6 +87,7 @@
     "famous/physics/forces/Drag": "global:famous.physics.forces.Drag",
     "famous/physics/forces/Spring": "global:famous.physics.forces.Spring",
     "famous/inputs/ScrollSync": "global:famous.inputs.ScrollSync",
+    "famous/inputs/TouchSync": "global:famous.inputs.TouchSync",
     "famous/physics/bodies/Particle": "global:famous.physics.bodies.Particle",
     "famous/transitions/Transitionable": "global:famous.transitions.Transitionable",
     "famous/core/Entity": "global:famous.core.Entity",

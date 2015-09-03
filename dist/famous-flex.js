@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.4
-* @generated 24-08-2015
+* @generated 03-09-2015
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -7277,6 +7277,9 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
             item.options.transfer.items = (options.transfer ? options.transfer.items : undefined) || item.options.transfer.items;
             item.options.transfer.zIndex = (options.transfer && (options.transfer.zIndex !== undefined)) ? options.transfer.zIndex : item.options.transfer.zIndex;
             item.options.transfer.fastResize = (options.transfer && (options.transfer.fastResize !== undefined)) ? options.transfer.fastResize : item.options.transfer.fastResize;
+
+            item.options.onShow = options.onShow ? options.onShow : item.options.onShow;
+            item.options.onHide = options.onHide ? options.onHide : item.options.onHide;
         }
         item.showCallback = function() {
             item.showCallback = undefined;
@@ -7305,14 +7308,23 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
                     (prevItem.state === ItemState.HIDING)) {
                     if (prevItem && (prevItem.state === ItemState.VISIBLE)) {
                         prevItem.state = ItemState.HIDE;
+                        if (prevItem.options.onHide) {
+                            prevItem.options.onHide();
+                        }
                     }
                     item.state = ItemState.SHOW;
+                    if (item.options.onShow) {
+                        item.options.onShow();
+                    }
                     invalidated = true;
                 }
                 break;
             }
             else if ((item.state === ItemState.VISIBLE) && item.hide) {
                 item.state = ItemState.HIDE;
+                if (item.options.onHide) {
+                    item.options.onHide();
+                }
             }
             if ((item.state === ItemState.SHOW) || (item.state === ItemState.HIDE)) {
                 this.layout.reflowLayout();
@@ -7369,6 +7381,8 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
      * @param {Object} [options] Options.
      * @param {Object} [options.transition] Transition options for both show & hide.
      * @param {Function} [options.animation] Animation function for both show & hide.
+     * @param {Function} [options.onShow] function to call just before show.
+     * @param {Function} [options.onHide] function to call just before hide.
      * @param {Object} [options.show] Show specific options.
      * @param {Object} [options.show.transition] Show specific transition options.
      * @param {Function} [options.show.animation] Show specific animation function.
@@ -7590,6 +7604,147 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
 
     module.exports = AnimationController;
 });
+
+/**
+ * @author: Sean Hu
+ */
+
+/**
+ * Controller for views.
+ *
+ * @module
+ */
+define('famous-flex/ViewController',['require','exports','module','./AnimationController','famous/inputs/TouchSync','famous/modifiers/StateModifier','famous/core/Transform'],function(require, exports, module) {
+
+    var AnimationController = require('./AnimationController');
+    var TouchSync = require('famous/inputs/TouchSync');
+    var StateModifier = require('famous/modifiers/StateModifier');
+    var Transform = require('famous/core/Transform');
+
+    /**
+     * @class
+     * @param {Object} [options] Configurable options.
+     * @alias module:ViewController
+     */
+    function ViewController(options) {
+        AnimationController.apply(this, arguments);
+
+        this._state = STATES.IDLE;
+        this._trackingPointer = undefined;
+        this._touchSync = new TouchSync({direction: TouchSync.DIRECTION_X});
+        this._stateModifier = new StateModifier();
+
+        this._eventInput.pipe(this._touchSync);
+        this._touchSync.on('start', _touchStart.bind(this));
+        this._touchSync.on('update', _touchUpdate.bind(this));
+        this._touchSync.on('end', _touchEnd.bind(this));
+    }
+    ViewController.prototype = Object.create(AnimationController.prototype);
+    ViewController.prototype.constructor = ViewController;
+
+    ViewController.DEFAULT_OPTIONS = {
+        // pixels per millisecond
+        velocityThreshold: 50,
+        revertDeltaDistance: 10,
+        fireDeltaDistance: 10
+    };
+
+    var STATES = {
+        IDLE     : 0,
+        STARTED  : 1,
+        TRACKING : 2,
+        FIRED    : 3
+    };
+
+    function _touchStart(event) {
+        if (this._viewStack.length < 2) {
+            return;
+        }
+
+        if (!this._trackingPointer) {
+            this._trackingPointer = event.touch;
+            this._state = STATES.STARTED;
+        }
+    }
+
+    function _touchUpdate(event) {
+        if (!this._trackingPointer) {
+            this._trackingPointer = event.touch;
+        }
+
+        if (this._trackingPointer === event.touch) {
+            var velocity = event.velocity;
+            var position = event.position;
+            var delta = event.delta;
+
+            switch (this._state) {
+                case STATES.STARTED:
+                    this._state = STATES.TRACKING;
+                _updateViews(delta, position, velocity);
+                break;
+                case STATES.TRACKING:
+                    _updateViews(delta, position, velocity);
+                break;
+                case STATES.FIRED:
+                    default:
+                    break;
+            }
+        }
+    }
+
+    function _touchEnd(event) {
+        if (this._trackingPointer === event.touch) {
+            switch (this._state) {
+                case STATES.STARTED:
+                    this._state = STATES.IDLE;
+                this._trackingPointer = undefined;
+                break;
+                case STATES.TRACKING:
+                    _revertTracking();
+                break;
+                case STATES.FIRED:
+                    default:
+                    break;
+            }
+        }
+    }
+
+    function _updateViews(delta, position, velocity) {
+        if (Math.abs(velocity) >= this.options.velocityThreshold) {
+            if (velocity > 0) {
+                _popViewStack.call(this);
+            } else {
+                _revertTracking.call(this);
+            }
+        } else if (delta < 0 && position <= this.options.revertDeltaDistance) {
+            _revertTracking.call(this);
+        } else if (delta > 0 && (this._size[0] - position) >= this.options.fireDeltaDistance) {
+            _popViewStack.call(this);
+        } else {
+            var item = this._viewStack[this._viewStack.length-1];
+            var preItem = this._viewStack[this._viewStack.length-2];
+            item.mod.setTransform(Transform.translate(position, 0, 0));
+            preItem.mod.setOpacity(position / this._size[0]);
+        }
+    }
+
+    function _popViewStack() {
+        this._state = STATES.FIRED;
+        this.hide(null, function() {
+            this._state = STATES.IDLE;
+        });
+    }
+
+    function _revertTracking() {
+        this._state = STATES.FIRED;
+        this.show(null, function() {
+            this._state = STATES.IDLE;
+        });
+    }
+
+    module.exports = ViewController;
+});
+
 
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -11535,7 +11690,7 @@ define('famous-flex/views/SizeConstraint',['require','exports','module','famous/
     module.exports = SizeConstraint;
 });
 
-define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLayoutNode','famous-flex/LayoutContext','famous-flex/LayoutController','famous-flex/LayoutNode','famous-flex/LayoutNodeManager','famous-flex/LayoutUtility','famous-flex/ScrollController','famous-flex/VirtualViewSequence','famous-flex/AnimationController','famous-flex/widgets/DatePicker','famous-flex/widgets/TabBar','famous-flex/widgets/TabBarController','famous-flex/layouts/CollectionLayout','famous-flex/layouts/CoverLayout','famous-flex/layouts/CubeLayout','famous-flex/layouts/GridLayout','famous-flex/layouts/HeaderFooterLayout','famous-flex/layouts/ListLayout','famous-flex/layouts/NavBarLayout','famous-flex/layouts/ProportionalLayout','famous-flex/layouts/WheelLayout','famous-flex/helpers/LayoutDockHelper','famous-flex/views/AnimatedIcon','famous-flex/views/AutoFontSizeSurface','famous-flex/views/AutosizeTextareaSurface','famous-flex/views/BkImageSurface','famous-flex/views/KenBurnsContainer','famous-flex/views/RefreshLoader','famous-flex/views/SizeConstraint'],function(require) {
+define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLayoutNode','famous-flex/LayoutContext','famous-flex/LayoutController','famous-flex/LayoutNode','famous-flex/LayoutNodeManager','famous-flex/LayoutUtility','famous-flex/ScrollController','famous-flex/VirtualViewSequence','famous-flex/AnimationController','famous-flex/ViewController','famous-flex/widgets/DatePicker','famous-flex/widgets/TabBar','famous-flex/widgets/TabBarController','famous-flex/layouts/CollectionLayout','famous-flex/layouts/CoverLayout','famous-flex/layouts/CubeLayout','famous-flex/layouts/GridLayout','famous-flex/layouts/HeaderFooterLayout','famous-flex/layouts/ListLayout','famous-flex/layouts/NavBarLayout','famous-flex/layouts/ProportionalLayout','famous-flex/layouts/WheelLayout','famous-flex/helpers/LayoutDockHelper','famous-flex/views/AnimatedIcon','famous-flex/views/AutoFontSizeSurface','famous-flex/views/AutosizeTextareaSurface','famous-flex/views/BkImageSurface','famous-flex/views/KenBurnsContainer','famous-flex/views/RefreshLoader','famous-flex/views/SizeConstraint'],function(require) {
     require('famous-flex/FlexScrollView');
     require('famous-flex/FlowLayoutNode');
     require('famous-flex/LayoutContext');
@@ -11546,6 +11701,7 @@ define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLa
     require('famous-flex/ScrollController');
     require('famous-flex/VirtualViewSequence');
     require('famous-flex/AnimationController');
+    require('famous-flex/ViewController');
 
     require('famous-flex/widgets/DatePicker');
     require('famous-flex/widgets/TabBar');
