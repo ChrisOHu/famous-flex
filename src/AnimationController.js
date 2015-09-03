@@ -24,6 +24,7 @@ define(function(require, exports, module) {
     var RenderNode = require('famous/core/RenderNode');
     var Timer = require('famous/utilities/Timer');
     var Easing = require('famous/transitions/Easing');
+    var LayoutUtility = require('./LayoutUtility');
     //var Transitionable = require('famous/animations/Transitionable');
 
     /**
@@ -46,14 +47,12 @@ define(function(require, exports, module) {
      * @alias module:AnimationController
      */
     function AnimationController(options) {
-        View.apply(this, arguments);
+        View.apply(this, options);
+        this.setOptions(AnimationController.DEFAULT_OPTIONS);
 
         this._size = [0, 0];
         _createLayout.call(this);
 
-        if (options) {
-            this.setOptions(options);
-        }
     }
     AnimationController.prototype = Object.create(View.prototype);
     AnimationController.prototype.constructor = AnimationController;
@@ -119,12 +118,12 @@ define(function(require, exports, module) {
         transition: {duration: 400, curve: Easing.inOutQuad},
         animation: AnimationController.Animation.Fade,
         show: {
-            // transition,
-            // animation
+            animation: AnimationController.Animation.Slide.Left,
+            transition: {duration: 500, curve: Easing.outBack}
         },
         hide: {
-            // transition,
-            // animation
+            animation: AnimationController.Animation.Slide.Right,
+            transition: {duration: 500, curve: Easing.outBack}
         },
         transfer: {
             fastResize: true,

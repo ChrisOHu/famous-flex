@@ -21,16 +21,15 @@ var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers'
 var RenderNode = typeof window !== 'undefined' ? window['famous']['core']['RenderNode'] : typeof global !== 'undefined' ? global['famous']['core']['RenderNode'] : null;
 var Timer = typeof window !== 'undefined' ? window['famous']['utilities']['Timer'] : typeof global !== 'undefined' ? global['famous']['utilities']['Timer'] : null;
 var Easing = typeof window !== 'undefined' ? window['famous']['transitions']['Easing'] : typeof global !== 'undefined' ? global['famous']['transitions']['Easing'] : null;
+var LayoutUtility = require('./LayoutUtility');
 function AnimationController(options) {
-    View.apply(this, arguments);
+    View.apply(this, options);
+    this.setOptions(AnimationController.DEFAULT_OPTIONS);
     this._size = [
         0,
         0
     ];
     _createLayout.call(this);
-    if (options) {
-        this.setOptions(options);
-    }
 }
 AnimationController.prototype = Object.create(View.prototype);
 AnimationController.prototype.constructor = AnimationController;
@@ -88,8 +87,20 @@ AnimationController.DEFAULT_OPTIONS = {
         curve: Easing.inOutQuad
     },
     animation: AnimationController.Animation.Fade,
-    show: {},
-    hide: {},
+    show: {
+        animation: AnimationController.Animation.Slide.Left,
+        transition: {
+            duration: 500,
+            curve: Easing.outBack
+        }
+    },
+    hide: {
+        animation: AnimationController.Animation.Slide.Right,
+        transition: {
+            duration: 500,
+            curve: Easing.outBack
+        }
+    },
     transfer: {
         fastResize: true,
         zIndex: 10
@@ -676,7 +687,7 @@ AnimationController.prototype.getSize = function () {
 };
 module.exports = AnimationController;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./LayoutController":5}],2:[function(require,module,exports){
+},{"./LayoutController":5,"./LayoutUtility":8}],2:[function(require,module,exports){
 var LayoutUtility = require('./LayoutUtility');
 var ScrollController = require('./ScrollController');
 var ListLayout = require('./layouts/ListLayout');

@@ -6740,7 +6740,7 @@ define('famous-flex/VirtualViewSequence',['require','exports','module','famous/c
  *
  * @module
  */
-define('famous-flex/AnimationController',['require','exports','module','famous/core/View','./LayoutController','famous/core/Transform','famous/core/Modifier','famous/modifiers/StateModifier','famous/core/RenderNode','famous/utilities/Timer','famous/transitions/Easing'],function(require, exports, module) {
+define('famous-flex/AnimationController',['require','exports','module','famous/core/View','./LayoutController','famous/core/Transform','famous/core/Modifier','famous/modifiers/StateModifier','famous/core/RenderNode','famous/utilities/Timer','famous/transitions/Easing','./LayoutUtility'],function(require, exports, module) {
 
     // import dependencies
     var View = require('famous/core/View');
@@ -6751,6 +6751,7 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
     var RenderNode = require('famous/core/RenderNode');
     var Timer = require('famous/utilities/Timer');
     var Easing = require('famous/transitions/Easing');
+    var LayoutUtility = require('./LayoutUtility');
     //var Transitionable = require('famous/animations/Transitionable');
 
     /**
@@ -6773,14 +6774,12 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
      * @alias module:AnimationController
      */
     function AnimationController(options) {
-        View.apply(this, arguments);
+        View.apply(this, options);
+        this.setOptions(AnimationController.DEFAULT_OPTIONS);
 
         this._size = [0, 0];
         _createLayout.call(this);
 
-        if (options) {
-            this.setOptions(options);
-        }
     }
     AnimationController.prototype = Object.create(View.prototype);
     AnimationController.prototype.constructor = AnimationController;
@@ -6846,12 +6845,12 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
         transition: {duration: 400, curve: Easing.inOutQuad},
         animation: AnimationController.Animation.Fade,
         show: {
-            // transition,
-            // animation
+            animation: AnimationController.Animation.Slide.Left,
+            transition: {duration: 500, curve: Easing.outBack}
         },
         hide: {
-            // transition,
-            // animation
+            animation: AnimationController.Animation.Slide.Right,
+            transition: {duration: 500, curve: Easing.outBack}
         },
         transfer: {
             fastResize: true,
