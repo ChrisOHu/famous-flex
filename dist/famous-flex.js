@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.4
-* @generated 03-09-2015
+* @generated 04-09-2015
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -10081,8 +10081,8 @@ define('famous-flex/layouts/CubeLayout',['require','exports','module'],function(
  * @module
  */
 define('famous-flex/layouts/GridLayout',['require','exports','module','./CollectionLayout'],function(require, exports, module) {
-    if (console.warn) {
-        console.warn('GridLayout has been deprecated and will be removed in the future, use CollectionLayout instead');
+    if (console.info) {
+        console.info('GridLayout has been deprecated and will be removed in the future, use CollectionLayout instead');
     }
     module.exports = require('./CollectionLayout');
 });
