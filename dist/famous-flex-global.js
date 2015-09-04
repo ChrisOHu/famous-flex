@@ -21,7 +21,6 @@ var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers'
 var RenderNode = typeof window !== 'undefined' ? window['famous']['core']['RenderNode'] : typeof global !== 'undefined' ? global['famous']['core']['RenderNode'] : null;
 var Timer = typeof window !== 'undefined' ? window['famous']['utilities']['Timer'] : typeof global !== 'undefined' ? global['famous']['utilities']['Timer'] : null;
 var Easing = typeof window !== 'undefined' ? window['famous']['transitions']['Easing'] : typeof global !== 'undefined' ? global['famous']['transitions']['Easing'] : null;
-var LayoutUtility = require('./LayoutUtility');
 function AnimationController(options) {
     View.apply(this, options);
     this.setOptions(AnimationController.DEFAULT_OPTIONS);
@@ -687,7 +686,7 @@ AnimationController.prototype.getSize = function () {
 };
 module.exports = AnimationController;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./LayoutController":5,"./LayoutUtility":8}],2:[function(require,module,exports){
+},{"./LayoutController":5}],2:[function(require,module,exports){
 var LayoutUtility = require('./LayoutUtility');
 var ScrollController = require('./ScrollController');
 var ListLayout = require('./layouts/ListLayout');
@@ -5430,8 +5429,8 @@ module.exports = function NavBarLayout(context, options) {
     var node;
     var i;
     var rightItems = context.get('rightItems');
-    if (rightItems) {
-        for (i = 0; i < rightItems.length; i++) {
+    if (rightItems && rightItems.length > 0) {
+        for (i = rightItems.length - 1; i >= 0; i--) {
             node = context.get(rightItems[i]);
             dock.right(node, options.rightItemWidth || options.itemWidth);
             dock.right(undefined, options.rightItemSpacer || options.itemSpacer);

@@ -6740,7 +6740,7 @@ define('famous-flex/VirtualViewSequence',['require','exports','module','famous/c
  *
  * @module
  */
-define('famous-flex/AnimationController',['require','exports','module','famous/core/View','./LayoutController','famous/core/Transform','famous/core/Modifier','famous/modifiers/StateModifier','famous/core/RenderNode','famous/utilities/Timer','famous/transitions/Easing','./LayoutUtility'],function(require, exports, module) {
+define('famous-flex/AnimationController',['require','exports','module','famous/core/View','./LayoutController','famous/core/Transform','famous/core/Modifier','famous/modifiers/StateModifier','famous/core/RenderNode','famous/utilities/Timer','famous/transitions/Easing'],function(require, exports, module) {
 
     // import dependencies
     var View = require('famous/core/View');
@@ -6751,7 +6751,7 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
     var RenderNode = require('famous/core/RenderNode');
     var Timer = require('famous/utilities/Timer');
     var Easing = require('famous/transitions/Easing');
-    var LayoutUtility = require('./LayoutUtility');
+    //var LayoutUtility = require('./LayoutUtility');
     //var Transitionable = require('famous/animations/Transitionable');
 
     /**
@@ -10231,8 +10231,8 @@ define('famous-flex/layouts/NavBarLayout',['require','exports','module','../help
         var node;
         var i;
         var rightItems = context.get('rightItems');
-        if (rightItems) {
-            for (i = 0; i < rightItems.length; i++) {
+        if (rightItems && rightItems.length > 0) {
+            for (i = rightItems.length - 1; i >= 0; i--) {
                 // dock node
                 node = context.get(rightItems[i]);
                 dock.right(node, options.rightItemWidth || options.itemWidth);

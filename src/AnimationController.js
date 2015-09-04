@@ -24,7 +24,7 @@ define(function(require, exports, module) {
     var RenderNode = require('famous/core/RenderNode');
     var Timer = require('famous/utilities/Timer');
     var Easing = require('famous/transitions/Easing');
-    var LayoutUtility = require('./LayoutUtility');
+    //var LayoutUtility = require('./LayoutUtility');
     //var Transitionable = require('famous/animations/Transitionable');
 
     /**
