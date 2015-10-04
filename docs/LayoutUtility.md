@@ -5,7 +5,6 @@ Utility class for famous-flex.
 
 * [LayoutUtility](#module_LayoutUtility)
   * [LayoutUtility](#exp_module_LayoutUtility--LayoutUtility) ⏏
-    * [new LayoutUtility()](#new_module_LayoutUtility--LayoutUtility_new)
     * [.normalizeMargins(margins)](#module_LayoutUtility--LayoutUtility.normalizeMargins)
     * [.cloneSpec(spec)](#module_LayoutUtility--LayoutUtility.cloneSpec) ⇒ <code>Spec</code>
     * [.isEqualSpec(spec1, spec2)](#module_LayoutUtility--LayoutUtility.isEqualSpec) ⇒ <code>Boolean</code>
@@ -21,8 +20,6 @@ Utility class for famous-flex.
 <a name="exp_module_LayoutUtility--LayoutUtility"></a>
 ### LayoutUtility ⏏
 **Kind**: Exported class  
-<a name="new_module_LayoutUtility--LayoutUtility_new"></a>
-#### new LayoutUtility()
 <a name="module_LayoutUtility--LayoutUtility.normalizeMargins"></a>
 #### LayoutUtility.normalizeMargins(margins)
 Normalizes the margins argument.

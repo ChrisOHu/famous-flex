@@ -10,7 +10,6 @@ the renderable that is to be layed out. To access the actual renderable, use the
 
 * [LayoutContext](#module_LayoutContext)
   * [LayoutContext](#exp_module_LayoutContext--LayoutContext) ⏏
-    * [new LayoutContext()](#new_module_LayoutContext--LayoutContext_new)
     * [.size](#module_LayoutContext--LayoutContext#size)
     * [.direction](#module_LayoutContext--LayoutContext#direction)
     * [.scrollOffset](#module_LayoutContext--LayoutContext#scrollOffset)
@@ -25,8 +24,6 @@ the renderable that is to be layed out. To access the actual renderable, use the
 <a name="exp_module_LayoutContext--LayoutContext"></a>
 ### LayoutContext ⏏
 **Kind**: Exported class  
-<a name="new_module_LayoutContext--LayoutContext_new"></a>
-#### new LayoutContext()
 <a name="module_LayoutContext--LayoutContext#size"></a>
 #### layoutContext.size
 {Property} Size in which to layout the renderables.
