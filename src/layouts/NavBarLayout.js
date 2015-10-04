@@ -89,8 +89,8 @@ define(function(require, exports, module) {
         var node;
         var i;
         var rightItems = context.get('rightItems');
-        if (rightItems) {
-            for (i = 0; i < rightItems.length; i++) {
+        if (rightItems && rightItems.length > 0) {
+            for (i = rightItems.length - 1; i >= 0; i--) {
                 // dock node
                 node = context.get(rightItems[i]);
                 dock.right(node, options.rightItemWidth || options.itemWidth);

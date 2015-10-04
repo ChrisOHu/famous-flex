@@ -19,8 +19,8 @@
  * @module
  */
 define(function(require, exports, module) {
-    if (console.warn) {
-        console.warn('GridLayout has been deprecated and will be removed in the future, use CollectionLayout instead');
+    if (console.info) {
+        console.info('GridLayout has been deprecated and will be removed in the future, use CollectionLayout instead');
     }
     module.exports = require('./CollectionLayout');
 });

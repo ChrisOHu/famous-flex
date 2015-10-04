@@ -76,7 +76,7 @@ define(function(require, exports, module) {
     LayoutNode.prototype.setSpec = function(spec) {
         this._specModified = true;
         if (spec.align) {
-            if (!spec.align) {
+            if (!this._spec.align) {
                 this._spec.align = [0, 0];
             }
             this._spec.align[0] = spec.align[0];
@@ -86,7 +86,7 @@ define(function(require, exports, module) {
             this._spec.align = undefined;
         }
         if (spec.origin) {
-            if (!spec.origin) {
+            if (!this._spec.origin) {
                 this._spec.origin = [0, 0];
             }
             this._spec.origin[0] = spec.origin[0];
@@ -96,7 +96,7 @@ define(function(require, exports, module) {
             this._spec.origin = undefined;
         }
         if (spec.size) {
-            if (!spec.size) {
+            if (!this._spec.size) {
                 this._spec.size = [0, 0];
             }
             this._spec.size[0] = spec.size[0];
@@ -106,7 +106,7 @@ define(function(require, exports, module) {
             this._spec.size = undefined;
         }
         if (spec.transform) {
-            if (!spec.transform) {
+            if (!this._spec.transform) {
                 this._spec.transform = spec.transform.slice(0);
             }
             else {

@@ -9,27 +9,26 @@
 *
 * @library famous-flex
 * @version 0.3.5
-* @generated 07-09-2015
+* @generated 04-10-2015
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var View = window.famous.core.View;
+(function (global){
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
 var LayoutController = require('./LayoutController');
-var Transform = window.famous.core.Transform;
-var Modifier = window.famous.core.Modifier;
-var StateModifier = window.famous.modifiers.StateModifier;
-var RenderNode = window.famous.core.RenderNode;
-var Timer = window.famous.utilities.Timer;
-var Easing = window.famous.transitions.Easing;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var Modifier = typeof window !== 'undefined' ? window['famous']['core']['Modifier'] : typeof global !== 'undefined' ? global['famous']['core']['Modifier'] : null;
+var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers']['StateModifier'] : typeof global !== 'undefined' ? global['famous']['modifiers']['StateModifier'] : null;
+var RenderNode = typeof window !== 'undefined' ? window['famous']['core']['RenderNode'] : typeof global !== 'undefined' ? global['famous']['core']['RenderNode'] : null;
+var Timer = typeof window !== 'undefined' ? window['famous']['utilities']['Timer'] : typeof global !== 'undefined' ? global['famous']['utilities']['Timer'] : null;
+var Easing = typeof window !== 'undefined' ? window['famous']['transitions']['Easing'] : typeof global !== 'undefined' ? global['famous']['transitions']['Easing'] : null;
 function AnimationController(options) {
-    View.apply(this, arguments);
+    View.apply(this, options);
+    this.setOptions(AnimationController.DEFAULT_OPTIONS);
     this._size = [
         0,
         0
     ];
     _createLayout.call(this);
-    if (options) {
-        this.setOptions(options);
-    }
 }
 AnimationController.prototype = Object.create(View.prototype);
 AnimationController.prototype.constructor = AnimationController;
@@ -87,8 +86,20 @@ AnimationController.DEFAULT_OPTIONS = {
         curve: Easing.inOutQuad
     },
     animation: AnimationController.Animation.Fade,
-    show: {},
-    hide: {},
+    show: {
+        animation: AnimationController.Animation.Slide.Left,
+        transition: {
+            duration: 500,
+            curve: Easing.outBack
+        }
+    },
+    hide: {
+        animation: AnimationController.Animation.Slide.Right,
+        transition: {
+            duration: 500,
+            curve: Easing.outBack
+        }
+    },
     transfer: {
         fastResize: true,
         zIndex: 10
@@ -461,6 +472,8 @@ function _setItemOptions(item, options, callback) {
         item.options.transfer.items = (options.transfer ? options.transfer.items : undefined) || item.options.transfer.items;
         item.options.transfer.zIndex = options.transfer && options.transfer.zIndex !== undefined ? options.transfer.zIndex : item.options.transfer.zIndex;
         item.options.transfer.fastResize = options.transfer && options.transfer.fastResize !== undefined ? options.transfer.fastResize : item.options.transfer.fastResize;
+        item.options.onShow = options.onShow ? options.onShow : item.options.onShow;
+        item.options.onHide = options.onHide ? options.onHide : item.options.onHide;
     }
     item.showCallback = function () {
         item.showCallback = undefined;
@@ -507,14 +520,23 @@ function _updateState() {
             if (!prevItem || prevItem.state === ItemState.VISIBLE || prevItem.state === ItemState.HIDING) {
                 if (prevItem && prevItem.state === ItemState.VISIBLE) {
                     prevItem.state = ItemState.HIDE;
+                    if (prevItem.options.onHide) {
+                        prevItem.options.onHide();
+                    }
                     prevItem.wait = item.wait;
                 }
                 item.state = ItemState.SHOW;
+                if (item.options.onShow) {
+                    item.options.onShow();
+                }
                 invalidated = true;
             }
             break;
         } else if (item.state === ItemState.VISIBLE && item.hide) {
             item.state = ItemState.HIDE;
+            if (item.options.onHide) {
+                item.options.onHide();
+            }
         }
         if (item.state === ItemState.SHOW || item.state === ItemState.HIDE) {
             this.layout.reflowLayout();
@@ -708,6 +730,7 @@ AnimationController.prototype.getSize = function () {
     return this._size || this.options.size;
 };
 module.exports = AnimationController;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./LayoutController":5}],2:[function(require,module,exports){
 var LayoutUtility = require('./LayoutUtility');
 var ScrollController = require('./ScrollController');
@@ -1116,15 +1139,16 @@ FlexScrollView.prototype.commit = function (context) {
     return result;
 };
 module.exports = FlexScrollView;
-},{"./LayoutUtility":8,"./ScrollController":9,"./layouts/ListLayout":17}],3:[function(require,module,exports){
-var OptionsManager = window.famous.core.OptionsManager;
-var Transform = window.famous.core.Transform;
-var Vector = window.famous.math.Vector;
-var Particle = window.famous.physics.bodies.Particle;
-var Spring = window.famous.physics.forces.Spring;
-var PhysicsEngine = window.famous.physics.PhysicsEngine;
+},{"./LayoutUtility":8,"./ScrollController":9,"./layouts/ListLayout":18}],3:[function(require,module,exports){
+(function (global){
+var OptionsManager = typeof window !== 'undefined' ? window['famous']['core']['OptionsManager'] : typeof global !== 'undefined' ? global['famous']['core']['OptionsManager'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var Vector = typeof window !== 'undefined' ? window['famous']['math']['Vector'] : typeof global !== 'undefined' ? global['famous']['math']['Vector'] : null;
+var Particle = typeof window !== 'undefined' ? window['famous']['physics']['bodies']['Particle'] : typeof global !== 'undefined' ? global['famous']['physics']['bodies']['Particle'] : null;
+var Spring = typeof window !== 'undefined' ? window['famous']['physics']['forces']['Spring'] : typeof global !== 'undefined' ? global['famous']['physics']['forces']['Spring'] : null;
+var PhysicsEngine = typeof window !== 'undefined' ? window['famous']['physics']['PhysicsEngine'] : typeof global !== 'undefined' ? global['famous']['physics']['PhysicsEngine'] : null;
 var LayoutNode = require('./LayoutNode');
-var Transitionable = window.famous.transitions.Transitionable;
+var Transitionable = typeof window !== 'undefined' ? window['famous']['transitions']['Transitionable'] : typeof global !== 'undefined' ? global['famous']['transitions']['Transitionable'] : null;
 function FlowLayoutNode(renderNode, spec) {
     LayoutNode.apply(this, arguments);
     if (!this.options) {
@@ -1558,6 +1582,7 @@ FlowLayoutNode.prototype.set = function (set, defaultSize) {
     }
 };
 module.exports = FlowLayoutNode;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./LayoutNode":6}],4:[function(require,module,exports){
 function LayoutContext(methods) {
     for (var n in methods) {
@@ -1581,16 +1606,17 @@ LayoutContext.prototype.resolveSize = function (node) {
 };
 module.exports = LayoutContext;
 },{}],5:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
-var Entity = window.famous.core.Entity;
-var ViewSequence = window.famous.core.ViewSequence;
-var OptionsManager = window.famous.core.OptionsManager;
-var EventHandler = window.famous.core.EventHandler;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
+var Entity = typeof window !== 'undefined' ? window['famous']['core']['Entity'] : typeof global !== 'undefined' ? global['famous']['core']['Entity'] : null;
+var ViewSequence = typeof window !== 'undefined' ? window['famous']['core']['ViewSequence'] : typeof global !== 'undefined' ? global['famous']['core']['ViewSequence'] : null;
+var OptionsManager = typeof window !== 'undefined' ? window['famous']['core']['OptionsManager'] : typeof global !== 'undefined' ? global['famous']['core']['OptionsManager'] : null;
+var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
 var LayoutUtility = require('./LayoutUtility');
 var LayoutNodeManager = require('./LayoutNodeManager');
 var LayoutNode = require('./LayoutNode');
 var FlowLayoutNode = require('./FlowLayoutNode');
-var Transform = window.famous.core.Transform;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
 require('./helpers/LayoutDockHelper');
 function LayoutController(options, nodeManager) {
     this.id = Entity.register(this);
@@ -2232,8 +2258,10 @@ LayoutController.prototype.cleanup = function (context) {
     }
 };
 module.exports = LayoutController;
-},{"./FlowLayoutNode":3,"./LayoutNode":6,"./LayoutNodeManager":7,"./LayoutUtility":8,"./helpers/LayoutDockHelper":11}],6:[function(require,module,exports){
-var Transform = window.famous.core.Transform;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./FlowLayoutNode":3,"./LayoutNode":6,"./LayoutNodeManager":7,"./LayoutUtility":8,"./helpers/LayoutDockHelper":12}],6:[function(require,module,exports){
+(function (global){
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
 var LayoutUtility = require('./LayoutUtility');
 function LayoutNode(renderNode, spec) {
     this.renderNode = renderNode;
@@ -2261,7 +2289,7 @@ LayoutNode.prototype.reset = function () {
 LayoutNode.prototype.setSpec = function (spec) {
     this._specModified = true;
     if (spec.align) {
-        if (!spec.align) {
+        if (!this._spec.align) {
             this._spec.align = [
                 0,
                 0
@@ -2273,7 +2301,7 @@ LayoutNode.prototype.setSpec = function (spec) {
         this._spec.align = undefined;
     }
     if (spec.origin) {
-        if (!spec.origin) {
+        if (!this._spec.origin) {
             this._spec.origin = [
                 0,
                 0
@@ -2285,7 +2313,7 @@ LayoutNode.prototype.setSpec = function (spec) {
         this._spec.origin = undefined;
     }
     if (spec.size) {
-        if (!spec.size) {
+        if (!this._spec.size) {
             this._spec.size = [
                 0,
                 0
@@ -2297,7 +2325,7 @@ LayoutNode.prototype.setSpec = function (spec) {
         this._spec.size = undefined;
     }
     if (spec.transform) {
-        if (!spec.transform) {
+        if (!this._spec.transform) {
             this._spec.transform = spec.transform.slice(0);
         } else {
             for (var i = 0; i < 16; i++) {
@@ -2390,11 +2418,13 @@ LayoutNode.prototype.remove = function (removeSpec) {
     this._removing = true;
 };
 module.exports = LayoutNode;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./LayoutUtility":8}],7:[function(require,module,exports){
+(function (global){
 var LayoutContext = require('./LayoutContext');
 var LayoutUtility = require('./LayoutUtility');
-var Surface = window.famous.core.Surface;
-var RenderNode = window.famous.core.RenderNode;
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var RenderNode = typeof window !== 'undefined' ? window['famous']['core']['RenderNode'] : typeof global !== 'undefined' ? global['famous']['core']['RenderNode'] : null;
 var MAX_POOL_SIZE = 100;
 function LayoutNodeManager(LayoutNode, initLayoutNodeFn) {
     this.LayoutNode = LayoutNode;
@@ -2901,8 +2931,10 @@ function _contextResolveSize(contextNodeOrId, parentSize) {
     return size;
 }
 module.exports = LayoutNodeManager;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./LayoutContext":4,"./LayoutUtility":8}],8:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 function LayoutUtility() {
 }
 LayoutUtility.registeredHelpers = {};
@@ -3076,23 +3108,25 @@ LayoutUtility.getRegisteredHelper = function (name) {
     return this.registeredHelpers[name];
 };
 module.exports = LayoutUtility;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],9:[function(require,module,exports){
+(function (global){
 var LayoutUtility = require('./LayoutUtility');
 var LayoutController = require('./LayoutController');
 var LayoutNode = require('./LayoutNode');
 var FlowLayoutNode = require('./FlowLayoutNode');
 var LayoutNodeManager = require('./LayoutNodeManager');
-var ContainerSurface = window.famous.surfaces.ContainerSurface;
-var Transform = window.famous.core.Transform;
-var EventHandler = window.famous.core.EventHandler;
-var Group = window.famous.core.Group;
-var Vector = window.famous.math.Vector;
-var PhysicsEngine = window.famous.physics.PhysicsEngine;
-var Particle = window.famous.physics.bodies.Particle;
-var Drag = window.famous.physics.forces.Drag;
-var Spring = window.famous.physics.forces.Spring;
-var ScrollSync = window.famous.inputs.ScrollSync;
-var ViewSequence = window.famous.core.ViewSequence;
+var ContainerSurface = typeof window !== 'undefined' ? window['famous']['surfaces']['ContainerSurface'] : typeof global !== 'undefined' ? global['famous']['surfaces']['ContainerSurface'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
+var Group = typeof window !== 'undefined' ? window['famous']['core']['Group'] : typeof global !== 'undefined' ? global['famous']['core']['Group'] : null;
+var Vector = typeof window !== 'undefined' ? window['famous']['math']['Vector'] : typeof global !== 'undefined' ? global['famous']['math']['Vector'] : null;
+var PhysicsEngine = typeof window !== 'undefined' ? window['famous']['physics']['PhysicsEngine'] : typeof global !== 'undefined' ? global['famous']['physics']['PhysicsEngine'] : null;
+var Particle = typeof window !== 'undefined' ? window['famous']['physics']['bodies']['Particle'] : typeof global !== 'undefined' ? global['famous']['physics']['bodies']['Particle'] : null;
+var Drag = typeof window !== 'undefined' ? window['famous']['physics']['forces']['Drag'] : typeof global !== 'undefined' ? global['famous']['physics']['forces']['Drag'] : null;
+var Spring = typeof window !== 'undefined' ? window['famous']['physics']['forces']['Spring'] : typeof global !== 'undefined' ? global['famous']['physics']['forces']['Spring'] : null;
+var ScrollSync = typeof window !== 'undefined' ? window['famous']['inputs']['ScrollSync'] : typeof global !== 'undefined' ? global['famous']['inputs']['ScrollSync'] : null;
+var ViewSequence = typeof window !== 'undefined' ? window['famous']['core']['ViewSequence'] : typeof global !== 'undefined' ? global['famous']['core']['ViewSequence'] : null;
 var Bounds = {
         NONE: 0,
         PREV: 1,
@@ -4389,8 +4423,119 @@ ScrollController.prototype.render = function render() {
     }
 };
 module.exports = ScrollController;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./FlowLayoutNode":3,"./LayoutController":5,"./LayoutNode":6,"./LayoutNodeManager":7,"./LayoutUtility":8}],10:[function(require,module,exports){
-var EventHandler = window.famous.core.EventHandler;
+(function (global){
+var AnimationController = require('./AnimationController');
+var TouchSync = typeof window !== 'undefined' ? window['famous']['inputs']['TouchSync'] : typeof global !== 'undefined' ? global['famous']['inputs']['TouchSync'] : null;
+var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers']['StateModifier'] : typeof global !== 'undefined' ? global['famous']['modifiers']['StateModifier'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+function ViewController(options) {
+    AnimationController.apply(this, arguments);
+    this._state = STATES.IDLE;
+    this._trackingPointer = undefined;
+    this._touchSync = new TouchSync({ direction: TouchSync.DIRECTION_X });
+    this._stateModifier = new StateModifier();
+    this._eventInput.pipe(this._touchSync);
+    this._touchSync.on('start', _touchStart.bind(this));
+    this._touchSync.on('update', _touchUpdate.bind(this));
+    this._touchSync.on('end', _touchEnd.bind(this));
+}
+ViewController.prototype = Object.create(AnimationController.prototype);
+ViewController.prototype.constructor = ViewController;
+ViewController.DEFAULT_OPTIONS = {
+    velocityThreshold: 50,
+    revertDeltaDistance: 10,
+    fireDeltaDistance: 10
+};
+var STATES = {
+        IDLE: 0,
+        STARTED: 1,
+        TRACKING: 2,
+        FIRED: 3
+    };
+function _touchStart(event) {
+    if (this._viewStack.length < 2) {
+        return;
+    }
+    if (!this._trackingPointer) {
+        this._trackingPointer = event.touch;
+        this._state = STATES.STARTED;
+    }
+}
+function _touchUpdate(event) {
+    if (!this._trackingPointer) {
+        this._trackingPointer = event.touch;
+    }
+    if (this._trackingPointer === event.touch) {
+        var velocity = event.velocity;
+        var position = event.position;
+        var delta = event.delta;
+        switch (this._state) {
+        case STATES.STARTED:
+            this._state = STATES.TRACKING;
+            _updateViews(delta, position, velocity);
+            break;
+        case STATES.TRACKING:
+            _updateViews(delta, position, velocity);
+            break;
+        case STATES.FIRED:
+        default:
+            break;
+        }
+    }
+}
+function _touchEnd(event) {
+    if (this._trackingPointer === event.touch) {
+        switch (this._state) {
+        case STATES.STARTED:
+            this._state = STATES.IDLE;
+            this._trackingPointer = undefined;
+            break;
+        case STATES.TRACKING:
+            _revertTracking();
+            break;
+        case STATES.FIRED:
+        default:
+            break;
+        }
+    }
+}
+function _updateViews(delta, position, velocity) {
+    if (Math.abs(velocity) >= this.options.velocityThreshold) {
+        if (velocity > 0) {
+            _popViewStack.call(this);
+        } else {
+            _revertTracking.call(this);
+        }
+    } else if (delta < 0 && position <= this.options.revertDeltaDistance) {
+        _revertTracking.call(this);
+    } else if (delta > 0 && this._size[0] - position >= this.options.fireDeltaDistance) {
+        _popViewStack.call(this);
+    } else {
+        var item = this._viewStack[this._viewStack.length - 1];
+        var preItem = this._viewStack[this._viewStack.length - 2];
+        item.mod.setTransform(Transform.translate(position, 0, 0));
+        preItem.mod.setOpacity(position / this._size[0]);
+    }
+}
+function _popViewStack() {
+    this._state = STATES.FIRED;
+    this.hide(null, function () {
+        this._state = STATES.IDLE;
+    });
+}
+function _revertTracking() {
+    this._state = STATES.FIRED;
+    this.show(null, function () {
+        this._state = STATES.IDLE;
+    });
+}
+module.exports = ViewController;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./AnimationController":1}],11:[function(require,module,exports){
+(function (global){
+var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
 function VirtualViewSequence(options) {
     options = options || {};
     this._ = options._ || new this.constructor.Backing(options);
@@ -4513,7 +4658,8 @@ VirtualViewSequence.prototype.swap = function () {
     }
 };
 module.exports = VirtualViewSequence;
-},{}],11:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],12:[function(require,module,exports){
 var LayoutUtility = require('../LayoutUtility');
 function LayoutDockHelper(context, options) {
     var size = context.size;
@@ -4716,8 +4862,9 @@ LayoutDockHelper.prototype.get = function () {
 };
 LayoutUtility.registerHelper('dock', LayoutDockHelper);
 module.exports = LayoutDockHelper;
-},{"../LayoutUtility":8}],12:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+},{"../LayoutUtility":8}],13:[function(require,module,exports){
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
 var capabilities = {
         sequence: true,
@@ -4932,8 +5079,10 @@ CollectionLayout.Capabilities = capabilities;
 CollectionLayout.Name = 'CollectionLayout';
 CollectionLayout.Description = 'Multi-cell collection-layout with margins & spacing';
 module.exports = CollectionLayout;
-},{"../LayoutUtility":8}],13:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../LayoutUtility":8}],14:[function(require,module,exports){
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
         sequence: true,
         direction: [
@@ -5039,7 +5188,8 @@ function CoverLayout(context, options) {
 }
 CoverLayout.Capabilities = capabilities;
 module.exports = CoverLayout;
-},{}],14:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],15:[function(require,module,exports){
 module.exports = function CubeLayout(context, options) {
     var itemSize = options.itemSize;
     context.set(context.next(), {
@@ -5111,12 +5261,12 @@ module.exports = function CubeLayout(context, options) {
         ]
     });
 };
-},{}],15:[function(require,module,exports){
-if (console.warn) {
-    console.warn('GridLayout has been deprecated and will be removed in the future, use CollectionLayout instead');
+},{}],16:[function(require,module,exports){
+if (console.info) {
+    console.info('GridLayout has been deprecated and will be removed in the future, use CollectionLayout instead');
 }
 module.exports = require('./CollectionLayout');
-},{"./CollectionLayout":12}],16:[function(require,module,exports){
+},{"./CollectionLayout":13}],17:[function(require,module,exports){
 var LayoutDockHelper = require('../helpers/LayoutDockHelper');
 module.exports = function HeaderFooterLayout(context, options) {
     var dock = new LayoutDockHelper(context, options);
@@ -5124,8 +5274,9 @@ module.exports = function HeaderFooterLayout(context, options) {
     dock.bottom('footer', options.footerSize !== undefined ? options.footerSize : options.footerHeight);
     dock.fill('content');
 };
-},{"../helpers/LayoutDockHelper":11}],17:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+},{"../helpers/LayoutDockHelper":12}],18:[function(require,module,exports){
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
 var capabilities = {
         sequence: true,
@@ -5305,7 +5456,8 @@ ListLayout.Capabilities = capabilities;
 ListLayout.Name = 'ListLayout';
 ListLayout.Description = 'List-layout with margins, spacing and sticky headers';
 module.exports = ListLayout;
-},{"../LayoutUtility":8}],18:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../LayoutUtility":8}],19:[function(require,module,exports){
 var LayoutDockHelper = require('../helpers/LayoutDockHelper');
 module.exports = function NavBarLayout(context, options) {
     var dock = new LayoutDockHelper(context, {
@@ -5326,8 +5478,8 @@ module.exports = function NavBarLayout(context, options) {
     var node;
     var i;
     var rightItems = context.get('rightItems');
-    if (rightItems) {
-        for (i = 0; i < rightItems.length; i++) {
+    if (rightItems && rightItems.length > 0) {
+        for (i = rightItems.length - 1; i >= 0; i--) {
             node = context.get(rightItems[i]);
             dock.right(node, options.rightItemWidth || options.itemWidth);
             dock.right(undefined, options.rightItemSpacer || options.itemSpacer);
@@ -5361,8 +5513,9 @@ module.exports = function NavBarLayout(context, options) {
         });
     }
 };
-},{"../helpers/LayoutDockHelper":11}],19:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+},{"../helpers/LayoutDockHelper":12}],20:[function(require,module,exports){
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
         sequence: true,
         direction: [
@@ -5416,8 +5569,10 @@ function ProportionalLayout(context, options) {
 }
 ProportionalLayout.Capabilities = capabilities;
 module.exports = ProportionalLayout;
-},{}],20:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],21:[function(require,module,exports){
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var LayoutUtility = require('../LayoutUtility');
 var capabilities = {
         sequence: true,
@@ -5534,8 +5689,10 @@ TabBarLayout.Capabilities = capabilities;
 TabBarLayout.Name = 'TabBarLayout';
 TabBarLayout.Description = 'TabBar widget layout';
 module.exports = TabBarLayout;
-},{"../LayoutUtility":8}],21:[function(require,module,exports){
-var Utility = window.famous.utilities.Utility;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../LayoutUtility":8}],22:[function(require,module,exports){
+(function (global){
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
 var capabilities = {
         sequence: true,
         direction: [
@@ -5643,11 +5800,874 @@ WheelLayout.Capabilities = capabilities;
 WheelLayout.Name = 'WheelLayout';
 WheelLayout.Description = 'Spinner-wheel/slot-machine layout';
 module.exports = WheelLayout;
-},{}],22:[function(require,module,exports){
-var View = window.famous.core.View;
-var Surface = window.famous.core.Surface;
-var Utility = window.famous.utilities.Utility;
-var ContainerSurface = window.famous.surfaces.ContainerSurface;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],23:[function(require,module,exports){
+(function (global){
+'use strict';
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers']['StateModifier'] : typeof global !== 'undefined' ? global['famous']['modifiers']['StateModifier'] : null;
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var Shape = {
+        HAMBURGER: 0,
+        LEFT_ARROW: 1
+    };
+function AnimatedIcon(options) {
+    View.apply(this, arguments);
+    this._createLines();
+    this._createShapes();
+    this.setShape(Shape.HAMBURGER, { duration: 0 });
+}
+AnimatedIcon.prototype = Object.create(View.prototype);
+AnimatedIcon.prototype.constructor = AnimatedIcon;
+AnimatedIcon.Shape = Shape;
+AnimatedIcon.DEFAULT_OPTIONS = { defaultTransition: { duration: 300 } };
+AnimatedIcon.prototype._createLines = function () {
+    var i;
+    this.lines = [];
+    for (i = 0; i < 3; i++) {
+        var modifier = new StateModifier({
+                align: [
+                    0.5,
+                    0
+                ],
+                origin: [
+                    0,
+                    0.5
+                ]
+            });
+        var surface = new Surface({ classes: ['line'] });
+        this.add(modifier).add(surface);
+        this.lines.push(modifier);
+    }
+};
+AnimatedIcon.prototype._createShapes = function () {
+    this.shapes = [];
+    this.shapes.push({
+        name: 'hamburger',
+        lines: [
+            {
+                size: [
+                    24,
+                    2
+                ],
+                transform: Transform.translate(0, 8, 0)
+            },
+            {
+                size: [
+                    24,
+                    2
+                ],
+                transform: Transform.translate(0, 15, 0)
+            },
+            {
+                size: [
+                    24,
+                    2
+                ],
+                transform: Transform.translate(0, 22, 0)
+            }
+        ]
+    });
+    this.shapes.push({
+        name: 'left-arrow',
+        lines: [
+            {
+                size: [
+                    10,
+                    2
+                ],
+                transform: Transform.multiply(Transform.translate(10, 21.5, 0), Transform.rotateZ(Math.PI / 180 * 225))
+            },
+            {
+                size: [
+                    16,
+                    2
+                ],
+                transform: Transform.multiply(Transform.translate(20, 15, 0), Transform.rotateZ(Math.PI / 180 * 180))
+            },
+            {
+                size: [
+                    10,
+                    2
+                ],
+                transform: Transform.multiply(Transform.translate(3, 15.5, 0), Transform.rotateZ(Math.PI / 180 * 315))
+            }
+        ]
+    });
+};
+AnimatedIcon.prototype.setShape = function (shapeIndex, transition, callback) {
+    if (this._shapeIndex === shapeIndex) {
+        if (callback) {
+            callback();
+        }
+        return;
+    }
+    this._shapeIndex = shapeIndex;
+    if (!transition) {
+        transition = this.options.defaultTransition;
+    }
+    var i;
+    var shape = this.shapes[shapeIndex];
+    for (i = 0; i < shape.lines.length; i++) {
+        this.lines[i].halt();
+        this.lines[i].setSize(shape.lines[i].size, transition);
+        if (i === 0) {
+            this.lines[i].setTransform(shape.lines[i].transform, transition, callback);
+        } else {
+            this.lines[i].setTransform(shape.lines[i].transform, transition);
+        }
+    }
+};
+AnimatedIcon.prototype.getShape = function (shapeIndex, transition) {
+    return this._shapeIndex;
+};
+module.exports = AnimatedIcon;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],24:[function(require,module,exports){
+(function (global){
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var Timer = typeof window !== 'undefined' ? window['famous']['utilities']['Timer'] : typeof global !== 'undefined' ? global['famous']['utilities']['Timer'] : null;
+function AutoFontSizeSurface(options) {
+    if (!options.fontSizeRange) {
+        throw 'No fontSizeRange specified';
+    }
+    this._fontSizeUnit = 'px';
+    this._invalidated = true;
+    this._oldCachedSize = [
+        0,
+        0
+    ];
+    _createHiddenSurface.call(this);
+    Surface.apply(this, arguments);
+    this._fontSize = this._fontSizeRange[1];
+    this._recalcTrigger = AutoFontSizeSurface.recalcTrigger;
+}
+AutoFontSizeSurface.prototype = Object.create(Surface.prototype);
+AutoFontSizeSurface.prototype.constructor = AutoFontSizeSurface;
+AutoFontSizeSurface.refreshAll = function () {
+    AutoFontSizeSurface.recalcTrigger++;
+};
+AutoFontSizeSurface.recalcTrigger = 0;
+function _createHiddenSurface() {
+    this._hiddenSurface = new Surface({
+        size: [
+            undefined,
+            true
+        ]
+    });
+    this._hiddenSurface.recall = AutoFontSizeSurface.prototype.recall;
+    this.setProperties({});
+}
+AutoFontSizeSurface.prototype.render = function () {
+    return [
+        this._hiddenSurface.id,
+        this.id
+    ];
+};
+AutoFontSizeSurface.prototype.commit = function (context) {
+    Surface.prototype.commit.apply(this, arguments);
+    if (this._oldCachedSize[0] !== context.size[0] || this._oldCachedSize[1] !== context.size[1]) {
+        this._oldCachedSize[0] = context.size[0];
+        this._oldCachedSize[1] = context.size[1];
+        this._invalidated = true;
+    }
+    if (this._recalcTrigger !== AutoFontSizeSurface.recalcTrigger) {
+        this._recalcTrigger = AutoFontSizeSurface.recalcTrigger;
+        this._invalidated = true;
+    }
+    if (this._currentTarget && this._hiddenSurface._currentTarget && this._invalidated) {
+        var hiddenEl = this._hiddenSurface._currentTarget;
+        hiddenEl.innerHTML = this._currentTarget.innerHTML;
+        this._invalidated = false;
+        var fontSize = Math.max(Math.min(this._fontSize, this._fontSizeRange[1]), this._fontSizeRange[0]);
+        var fontSizeStr = fontSize + this._fontSizeUnit;
+        if (hiddenEl.style.fontSize !== fontSizeStr) {
+            hiddenEl.style.fontSize = fontSizeStr;
+        }
+        if (hiddenEl.clientHeight < context.size[1] && hiddenEl.scrollWidth <= Math.ceil(context.size[0])) {
+            while (fontSize < this._fontSizeRange[1]) {
+                hiddenEl.style.fontSize = fontSize + 1 + this._fontSizeUnit;
+                if (hiddenEl.clientHeight > context.size[1] || hiddenEl.scrollWidth > Math.ceil(context.size[0])) {
+                    hiddenEl.style.fontSize = fontSizeStr;
+                    break;
+                }
+                fontSize++;
+                fontSizeStr = fontSize + this._fontSizeUnit;
+            }
+        } else if (hiddenEl.clientHeight > context.size[1] || hiddenEl.scrollWidth > Math.ceil(context.size[0])) {
+            while (fontSize > this._fontSizeRange[0]) {
+                fontSize--;
+                fontSizeStr = fontSize + this._fontSizeUnit;
+                hiddenEl.style.fontSize = fontSizeStr;
+                if (hiddenEl.clientHeight <= context.size[1] && hiddenEl.scrollWidth <= Math.ceil(context.size[0])) {
+                    break;
+                }
+            }
+        }
+        this._fontSize = fontSize;
+        if (this._currentTarget.style.fontSize !== fontSizeStr) {
+            this._currentTarget.style.fontSize = fontSizeStr;
+        }
+        if (!this._firstCommit) {
+            this._firstCommit = true;
+            Timer.setTimeout(function () {
+                this._invalidated = true;
+            }.bind(this), 100);
+        }
+    }
+};
+AutoFontSizeSurface.prototype.recall = function (target) {
+    target.style.fontSize = '';
+    this._invalidated = true;
+    return Surface.prototype.recall.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.setProperties = function setProperties(properties) {
+    properties = properties || {};
+    var hiddenProperties = {};
+    for (var key in properties) {
+        hiddenProperties[key] = properties[key];
+    }
+    hiddenProperties.visibility = 'hidden';
+    this._hiddenSurface.setProperties(hiddenProperties);
+    this._invalidated = true;
+    return Surface.prototype.setProperties.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.setAttributes = function setAttributes(attributes) {
+    this._invalidated = true;
+    this._hiddenSurface.setAttributes(attributes);
+    return Surface.prototype.setAttributes.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.addClass = function addClass(className) {
+    this._invalidated = true;
+    this._hiddenSurface.addClass(className);
+    return Surface.prototype.addClass.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.removeClass = function removeClass(className) {
+    this._invalidated = true;
+    this._hiddenSurface.removeClass(className);
+    return Surface.prototype.removeClass.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.toggleClass = function toggleClass(className) {
+    this._invalidated = true;
+    this._hiddenSurface.toggleClass(className);
+    return Surface.prototype.toggleClass.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.setClasses = function setClasses(classList) {
+    this._invalidated = true;
+    var hiddenClassList = classList.concat(['hiddenAutoFontSizeSurface']);
+    this._hiddenSurface.setClasses(hiddenClassList);
+    return Surface.prototype.setClasses.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.setContent = function setContent(content) {
+    this._invalidated = true;
+    return Surface.prototype.setContent.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.setOptions = function setOptions(options) {
+    this._invalidated = true;
+    this._hiddenSurface.setOptions(options);
+    if (options.fontSizeRange) {
+        this._fontSizeRange = options.fontSizeRange;
+    }
+    if (options.fontSizeUnit) {
+        this._fontSizeUnit = options.fontSizeUnit;
+    }
+    return Surface.prototype.setOptions.apply(this, arguments);
+};
+AutoFontSizeSurface.prototype.getFontSizeRange = function () {
+    return this._fontSizeRange;
+};
+AutoFontSizeSurface.prototype.getFontSizeUnit = function () {
+    return this._fontSizeUnit;
+};
+module.exports = AutoFontSizeSurface;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],25:[function(require,module,exports){
+(function (global){
+'use strict';
+var TextareaSurface = typeof window !== 'undefined' ? window['famous']['surfaces']['TextareaSurface'] : typeof global !== 'undefined' ? global['famous']['surfaces']['TextareaSurface'] : null;
+function AutosizeTextareaSurface(options) {
+    this._heightInvalidated = true;
+    this._oldCachedSize = [
+        0,
+        0
+    ];
+    _createHiddenSurface.call(this);
+    TextareaSurface.apply(this, arguments);
+    this.on('change', _onValueChanged.bind(this));
+    this.on('keyup', _onValueChanged.bind(this));
+    this.on('keydown', _onValueChanged.bind(this));
+}
+AutosizeTextareaSurface.prototype = Object.create(TextareaSurface.prototype);
+AutosizeTextareaSurface.prototype.constructor = AutosizeTextareaSurface;
+function _onValueChanged(event) {
+    this._heightInvalidated = true;
+}
+function _createHiddenSurface() {
+    this._preferredScrollHeight = 0;
+    this._hiddenTextarea = new TextareaSurface({});
+    this.setProperties({});
+}
+AutosizeTextareaSurface.prototype.render = function render() {
+    return [
+        this._hiddenTextarea.id,
+        this.id
+    ];
+};
+var oldCommit = AutosizeTextareaSurface.prototype.commit;
+AutosizeTextareaSurface.prototype.commit = function commit(context) {
+    oldCommit.apply(this, arguments);
+    if (this._oldCachedSize[0] !== context.size[0] || this._oldCachedSize[1] !== context.size[1]) {
+        this._oldCachedSize[0] = context.size[0];
+        this._oldCachedSize[1] = context.size[1];
+        this._heightInvalidated = true;
+    }
+    if (this._currentTarget && this._hiddenTextarea._currentTarget && this._heightInvalidated) {
+        this._hiddenTextarea._currentTarget.value = this._currentTarget.value;
+        this._heightInvalidated = false;
+        this._hiddenTextarea._currentTarget.rows = 1;
+        this._hiddenTextarea._currentTarget.style.height = '';
+        var scrollHeight = this._hiddenTextarea._currentTarget.scrollHeight;
+        if (scrollHeight !== this._preferredScrollHeight) {
+            this._preferredScrollHeight = scrollHeight;
+            this._eventOutput.emit('scrollHeightChanged', this._preferredScrollHeight);
+        }
+    }
+};
+AutosizeTextareaSurface.prototype.getScrollHeight = function () {
+    return this._preferredScrollHeight;
+};
+var oldSetProperties = AutosizeTextareaSurface.prototype.setProperties;
+AutosizeTextareaSurface.prototype.setProperties = function setProperties(properties) {
+    properties = properties || {};
+    var hiddenProperties = {};
+    for (var key in properties) {
+        hiddenProperties[key] = properties[key];
+    }
+    hiddenProperties.visibility = 'hidden';
+    this._hiddenTextarea.setProperties(hiddenProperties);
+    this._heightInvalidated = true;
+    return oldSetProperties.call(this, properties);
+};
+var oldSetAttributes = AutosizeTextareaSurface.prototype.setAttributes;
+AutosizeTextareaSurface.prototype.setAttributes = function setAttributes(attributes) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.setAttributes(attributes);
+    return oldSetAttributes.call(this, attributes);
+};
+var oldAddClass = AutosizeTextareaSurface.prototype.addClass;
+AutosizeTextareaSurface.prototype.addClass = function addClass(className) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.addClass(className);
+    return oldAddClass.call(this, className);
+};
+var oldRemoveClass = AutosizeTextareaSurface.prototype.removeClass;
+AutosizeTextareaSurface.prototype.removeClass = function removeClass(className) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.removeClass(className);
+    return oldRemoveClass.call(this, className);
+};
+var oldToggleClass = AutosizeTextareaSurface.prototype.toggleClass;
+AutosizeTextareaSurface.prototype.toggleClass = function toggleClass(className) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.toggleClass(className);
+    return oldToggleClass.call(this, className);
+};
+var oldSetClasses = AutosizeTextareaSurface.prototype.setClasses;
+AutosizeTextareaSurface.prototype.setClasses = function setClasses(classList) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.setClasses(classList);
+    return oldSetClasses.call(this, classList);
+};
+var oldSetContent = AutosizeTextareaSurface.prototype.setContent;
+AutosizeTextareaSurface.prototype.setContent = function setContent(content) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.setContent(content);
+    return oldSetContent.call(this, content);
+};
+var oldSetOptions = AutosizeTextareaSurface.prototype.setOptions;
+AutosizeTextareaSurface.prototype.setOptions = function setOptions(options) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.setOptions(options);
+    return oldSetOptions.call(this, options);
+};
+var oldSetValue = AutosizeTextareaSurface.prototype.setValue;
+AutosizeTextareaSurface.prototype.setValue = function setValue(str) {
+    this._heightInvalidated = true;
+    return oldSetValue.call(this, str);
+};
+var oldSetWrap = AutosizeTextareaSurface.prototype.setWrap;
+AutosizeTextareaSurface.prototype.setWrap = function setWrap(str) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.setWrap(str);
+    return oldSetWrap.call(this, str);
+};
+var oldSetColumns = AutosizeTextareaSurface.prototype.setColumns;
+AutosizeTextareaSurface.prototype.setColumns = function setColumns(num) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.setColumns(num);
+    return oldSetColumns.call(this, num);
+};
+var oldSetRows = AutosizeTextareaSurface.prototype.setRows;
+AutosizeTextareaSurface.prototype.setRows = function setRows(num) {
+    this._heightInvalidated = true;
+    this._hiddenTextarea.setRows(num);
+    return oldSetRows.call(this, num);
+};
+AutosizeTextareaSurface.prototype.deploy = function deploy(target) {
+    if (this._placeholder !== '') {
+        target.placeholder = this._placeholder;
+    }
+    target.value = this._value;
+    target.name = this._name;
+    target.wrap = this._wrap;
+    if (this._cols !== '') {
+        target.cols = this._cols;
+    }
+    if (this._rows !== '') {
+        target.rows = this._rows;
+    }
+};
+module.exports = AutosizeTextareaSurface;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],26:[function(require,module,exports){
+(function (global){
+'use strict';
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var SizeMode = {
+        AUTO: 'auto',
+        FILL: '100% 100%',
+        ASPECTFILL: 'cover',
+        ASPECTFIT: 'contain'
+    };
+var PositionMode = {
+        CENTER: 'center center',
+        LEFT: 'left center',
+        RIGHT: 'right center',
+        TOP: 'center top',
+        BOTTOM: 'center bottom',
+        TOPLEFT: 'left top',
+        TOPRIGHT: 'right top',
+        BOTTOMLEFT: 'left bottom',
+        BOTTOMRIGHT: 'right bottom'
+    };
+var RepeatMode = {
+        NONE: 'no-repeat',
+        VERTICAL: 'repeat-x',
+        HORIZONTAL: 'repeat-y',
+        BOTH: 'repeat'
+    };
+function BkImageSurface(options) {
+    Surface.apply(this, arguments);
+    this.content = undefined;
+    this._imageUrl = options ? options.content : undefined;
+    this._sizeMode = options && options.sizeMode ? options.sizeMode : SizeMode.FILL;
+    this._positionMode = options && options.positionMode ? options.positionMode : PositionMode.CENTER;
+    this._repeatMode = options && options.repeatMode ? options.repeatMode : RepeatMode.NONE;
+    this._updateProperties();
+}
+BkImageSurface.prototype = Object.create(Surface.prototype);
+BkImageSurface.prototype.constructor = BkImageSurface;
+BkImageSurface.prototype.elementType = 'div';
+BkImageSurface.prototype.elementClass = 'famous-surface';
+BkImageSurface.SizeMode = SizeMode;
+BkImageSurface.PositionMode = PositionMode;
+BkImageSurface.RepeatMode = RepeatMode;
+BkImageSurface.prototype._updateProperties = function () {
+    var props = this.getProperties();
+    if (this._imageUrl) {
+        var imageUrl = this._imageUrl;
+        if (imageUrl.indexOf('(') >= 0 || imageUrl.indexOf(')') >= 0) {
+            imageUrl = imageUrl.split('(').join('%28');
+            imageUrl = imageUrl.split(')').join('%29');
+        }
+        props.backgroundImage = 'url(' + imageUrl + ')';
+    } else {
+        props.backgroundImage = '';
+    }
+    props.backgroundSize = this._sizeMode;
+    props.backgroundPosition = this._positionMode;
+    props.backgroundRepeat = this._repeatMode;
+    this.setProperties(props);
+};
+BkImageSurface.prototype.setContent = function (imageUrl) {
+    this._imageUrl = imageUrl;
+    this._updateProperties();
+};
+BkImageSurface.prototype.getContent = function () {
+    return this._imageUrl;
+};
+BkImageSurface.prototype.setSizeMode = function (sizeMode) {
+    this._sizeMode = sizeMode;
+    this._updateProperties();
+};
+BkImageSurface.prototype.getSizeMode = function () {
+    return this._sizeMode;
+};
+BkImageSurface.prototype.setPositionMode = function (positionMode) {
+    this._positionMode = positionMode;
+    this._updateProperties();
+};
+BkImageSurface.prototype.getPositionMode = function () {
+    return this._positionMode;
+};
+BkImageSurface.prototype.setRepeatMode = function (repeatMode) {
+    this._repeatMode = repeatMode;
+    this._updateProperties();
+};
+BkImageSurface.prototype.getRepeatMode = function () {
+    return this._repeatMode;
+};
+BkImageSurface.prototype.deploy = function deploy(target) {
+    target.innerHTML = '';
+    if (this._imageUrl) {
+        target.style.backgroundImage = 'url(' + this._imageUrl + ')';
+    }
+};
+BkImageSurface.prototype.recall = function recall(target) {
+    target.style.backgroundImage = '';
+};
+module.exports = BkImageSurface;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],27:[function(require,module,exports){
+(function (global){
+'use strict';
+var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers']['StateModifier'] : typeof global !== 'undefined' ? global['famous']['modifiers']['StateModifier'] : null;
+var ContainerSurface = typeof window !== 'undefined' ? window['famous']['surfaces']['ContainerSurface'] : typeof global !== 'undefined' ? global['famous']['surfaces']['ContainerSurface'] : null;
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var Easing = typeof window !== 'undefined' ? window['famous']['transitions']['Easing'] : typeof global !== 'undefined' ? global['famous']['transitions']['Easing'] : null;
+function KenBurnsContainer() {
+    View.apply(this, arguments);
+    this._containerSurface = new ContainerSurface(this.options.containerSurface);
+    this._node.add(this._containerSurface);
+    this.modifier = new StateModifier(this.options.modifier);
+    this._renderable = this._containerSurface.add(this.modifier);
+    this._newPosition = this.options.modifier.origin;
+    this._newZoomScale = 1;
+}
+KenBurnsContainer.prototype = Object.create(View.prototype);
+KenBurnsContainer.prototype.constructor = KenBurnsContainer;
+KenBurnsContainer.DEFAULT_OPTIONS = {
+    duration: 10000,
+    delay: 1000,
+    modifier: {
+        origin: [
+            0.5,
+            0.5
+        ],
+        align: [
+            0.5,
+            0.5
+        ]
+    },
+    containerSurface: { properties: { overflow: 'hidden' } }
+};
+KenBurnsContainer.prototype.add = function add() {
+    return this._renderable.add.apply(this._renderable, arguments);
+};
+KenBurnsContainer.prototype.halt = function halt() {
+    this.modifier.halt();
+};
+KenBurnsContainer.prototype.isActive = function isActive() {
+    this.modifier._transformState.isActive();
+};
+KenBurnsContainer.prototype.panAndZoom = function (position, zoomScale, duration, callback) {
+    this._newPosition = position || this._newPosition;
+    this._newZoomScale = zoomScale || this._newZoomScale;
+    var zoomTransition = {
+            duration: duration || this.options.duration,
+            curve: Easing.inOutSine
+        };
+    this.modifier.setTransform(Transform.scale(this._newZoomScale, this._newZoomScale, 1), zoomTransition, callback);
+    var panTransition = {
+            duration: duration || this.options.duration,
+            curve: Easing.inOutSine
+        };
+    this.modifier.setOrigin(this._newPosition, panTransition);
+    this.modifier.setAlign(this._newPosition, panTransition);
+};
+KenBurnsContainer.prototype.delay = function (duration, callback) {
+    duration = duration || this.options.delay;
+    if (!duration) {
+        return;
+    }
+    this.panAndZoom(null, null, duration, callback);
+};
+module.exports = KenBurnsContainer;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],28:[function(require,module,exports){
+(function (global){
+'use strict';
+var Entity = typeof window !== 'undefined' ? window['famous']['core']['Entity'] : typeof global !== 'undefined' ? global['famous']['core']['Entity'] : null;
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var Modifier = typeof window !== 'undefined' ? window['famous']['core']['Modifier'] : typeof global !== 'undefined' ? global['famous']['core']['Modifier'] : null;
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
+function RefreshLoader(options) {
+    View.apply(this, arguments);
+    this._rotateOffset = 0;
+    this._scale = 1;
+    this.id = Entity.register(this);
+    if (this.options.pullToRefresh && this.options.pullToRefreshBackgroundColor) {
+        _createForeground.call(this, _translateBehind.call(this));
+    }
+    _createParticles.call(this, _translateBehind.call(this), this.options.particleCount);
+}
+RefreshLoader.prototype = Object.create(View.prototype);
+RefreshLoader.prototype.constructor = RefreshLoader;
+RefreshLoader.DEFAULT_OPTIONS = {
+    color: '#AAAAAA',
+    particleCount: 10,
+    particleSize: 6,
+    rotateVelocity: 0.09,
+    hideVelocity: 0.05,
+    quickHideVelocity: 0.2,
+    pullToRefresh: false,
+    pullToRefreshBackgroundColor: 'white',
+    pullToRefreshDirection: 1,
+    pullToRefreshFooter: false,
+    pullToRefreshFactor: 1.5
+};
+function _translateBehind() {
+    if (this._zNode) {
+        this._zNode = this._zNode.add(new Modifier({ transform: Transform.behind }));
+    } else {
+        this._zNode = this.add(new Modifier({ transform: Transform.behind }));
+    }
+    return this._zNode;
+}
+function _createParticles(node, count) {
+    this._particles = [];
+    var options = {
+            size: [
+                this.options.particleSize,
+                this.options.particleSize
+            ],
+            properties: {
+                backgroundColor: this.options.color,
+                borderRadius: '50%'
+            }
+        };
+    for (var i = 0; i < count; i++) {
+        var particle = {
+                surface: new Surface(options),
+                mod: new Modifier({})
+            };
+        this._particles.push(particle);
+        node.add(particle.mod).add(particle.surface);
+    }
+}
+function _createForeground(node) {
+    this._foreground = {
+        surface: new Surface({
+            size: this.options.size,
+            properties: { backgroundColor: this.options.pullToRefreshBackgroundColor }
+        }),
+        mod: new Modifier({})
+    };
+    node.add(this._foreground.mod).add(this._foreground.surface);
+}
+var devicePixelRatio = window.devicePixelRatio || 1;
+function _positionParticles(renderSize) {
+    var shapeSize = this.options.size[this.options.pullToRefreshDirection] / 2;
+    var visiblePerc = Math.min(Math.max(renderSize[this.options.pullToRefreshDirection] / (this.options.size[this.options.pullToRefreshDirection] * 2), 0), 1);
+    switch (this._pullToRefreshStatus) {
+    case 0:
+    case 1:
+        this._rotateOffset = 0;
+        this._scale = 1;
+        break;
+    case 2:
+        visiblePerc = 1;
+        this._rotateOffset += this.options.rotateVelocity;
+        break;
+    case 3:
+        visiblePerc = 1;
+        this._rotateOffset += this.options.rotateVelocity;
+        this._scale -= this.options.hideVelocity;
+        this._scale = Math.max(0, this._scale);
+        break;
+    case 4:
+        visiblePerc = 1;
+        this._rotateOffset += this.options.rotateVelocity;
+        this._scale -= this.options.quickHideVelocity;
+        this._scale = Math.max(0, this._scale);
+        break;
+    }
+    var rTotal = visiblePerc * Math.PI * 2;
+    for (var i = 0, cnt = this._particles.length; i < cnt; i++) {
+        var mod = this._particles[i].mod;
+        var r = i / cnt * rTotal - Math.PI / 2 + this._rotateOffset + (this.options.pullToRefreshFooter ? Math.PI : 0);
+        var x = Math.cos(r) * (shapeSize / 2) * this._scale;
+        var y = Math.sin(r) * (shapeSize / 2) * this._scale;
+        if (this.options.pullToRefreshDirection) {
+            x += renderSize[0] / 2;
+            y += shapeSize;
+            y = Math.round(y * devicePixelRatio) / devicePixelRatio;
+        } else {
+            x += shapeSize;
+            y += renderSize[1] / 2;
+            x = Math.round(x * devicePixelRatio) / devicePixelRatio;
+        }
+        mod.transformFrom(Transform.translate(x, y, 0));
+        mod.opacityFrom(this._scale);
+    }
+}
+function _positionForeground(renderSize) {
+    if (this._pullToRefreshDirection) {
+        this._foreground.mod.transformFrom(Transform.translate(0, renderSize[1], 0));
+    } else {
+        this._foreground.mod.transformFrom(Transform.translate(renderSize[0], 0, 0));
+    }
+}
+RefreshLoader.prototype.render = function render() {
+    return [
+        this.id,
+        this._node.render()
+    ];
+};
+RefreshLoader.prototype.commit = function commit(context) {
+    _positionParticles.call(this, context.size);
+    if (this._foreground) {
+        _positionForeground.call(this, context.size);
+    }
+    return {};
+};
+RefreshLoader.prototype.setPullToRefreshStatus = function (status) {
+    this._pullToRefreshStatus = status;
+};
+RefreshLoader.prototype.getPullToRefreshSize = function () {
+    if (this.options.pullToRefreshDirection) {
+        return [
+            this.options.size[0],
+            this.options.size[1] * this.options.pullToRefreshFactor
+        ];
+    } else {
+        return [
+            this.options.size[1] * this.options.pullToRefreshFactor,
+            this.options.size[1]
+        ];
+    }
+};
+module.exports = RefreshLoader;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],29:[function(require,module,exports){
+(function (global){
+'use strict';
+var Entity = typeof window !== 'undefined' ? window['famous']['core']['Entity'] : typeof global !== 'undefined' ? global['famous']['core']['Entity'] : null;
+var RenderNode = typeof window !== 'undefined' ? window['famous']['core']['RenderNode'] : typeof global !== 'undefined' ? global['famous']['core']['RenderNode'] : null;
+var OptionsManager = typeof window !== 'undefined' ? window['famous']['core']['OptionsManager'] : typeof global !== 'undefined' ? global['famous']['core']['OptionsManager'] : null;
+var Constraints = {
+        scale: 'scale',
+        padding: 'padding',
+        max: 'max',
+        min: 'min',
+        ratio: 'ratio',
+        size: 'size'
+    };
+function _updateConstraints() {
+    for (var constraint in Constraints) {
+        if (this._constraints[constraint] === undefined) {
+            this._constraints[constraint] = {};
+        }
+        this._constraints[constraint].getter = this.options[constraint] instanceof Function ? this.options[constraint] : null;
+        this._constraints[constraint].value = this.options[constraint];
+    }
+}
+function SizeConstraint(options) {
+    this.options = Object.create(SizeConstraint.DEFAULT_OPTIONS);
+    this._optionsManager = new OptionsManager(this.options);
+    this._constraints = {};
+    _updateConstraints.call(this);
+    if (options) {
+        this.setOptions(options);
+    }
+    this._entityId = Entity.register(this);
+    this._node = new RenderNode();
+}
+SizeConstraint.DEFAULT_OPTIONS = {
+    scale: undefined,
+    padding: undefined,
+    max: undefined,
+    min: undefined,
+    ratio: undefined,
+    size: undefined
+};
+SizeConstraint.prototype.add = function add() {
+    return this._node.add.apply(this._node, arguments);
+};
+SizeConstraint.prototype.getSize = function getSize() {
+    return this._node.getSize.apply(this._node, arguments);
+};
+SizeConstraint.prototype.setOptions = function setOptions(options) {
+    var result = this._optionsManager.setOptions(options);
+    _updateConstraints.call(this);
+    return result;
+};
+SizeConstraint.prototype.calcSize = function (parentSize) {
+    var scale = this._constraints.scale.getter ? this._constraints.scale.getter() : this._constraints.scale.value;
+    var padding = this._constraints.padding.getter ? this._constraints.padding.getter() : this._constraints.padding.value;
+    var max = this._constraints.max.getter ? this._constraints.max.getter() : this._constraints.max.value;
+    var min = this._constraints.min.getter ? this._constraints.min.getter() : this._constraints.min.value;
+    var ratio = this._constraints.ratio.getter ? this._constraints.ratio.getter() : this._constraints.ratio.value;
+    var fallbackSize = this._constraints.size.getter ? this._constraints.size.getter() : this._constraints.size.value;
+    if (!scale && !padding && !max && !min && !ratio && !fallbackSize) {
+        return null;
+    }
+    var size = [
+            parentSize[0],
+            parentSize[1]
+        ];
+    if (fallbackSize) {
+        size[0] = fallbackSize[0] || size[0];
+        size[1] = fallbackSize[1] || size[1];
+    }
+    if (scale) {
+        size[0] = size[0] * (scale[0] !== undefined ? scale[0] : 1);
+        size[1] = size[1] * (scale[1] !== undefined ? scale[1] : 1);
+    }
+    if (padding) {
+        size[0] = size[0] - (padding[0] !== undefined ? padding[0] : 0);
+        size[1] = size[1] - (padding[1] !== undefined ? padding[1] : 0);
+    }
+    if (max) {
+        size[0] = Math.min(size[0], max[0] !== undefined ? max[0] : size[0]);
+        size[1] = Math.min(size[1], max[1] !== undefined ? max[1] : size[1]);
+    }
+    if (min) {
+        size[0] = Math.max(size[0], min[0] !== undefined ? min[0] : size[0]);
+        size[1] = Math.max(size[1], min[1] !== undefined ? min[1] : size[1]);
+    }
+    if (ratio) {
+        var ratioVal = ratio[0] / ratio[1];
+        if (ratioVal < size[0] / size[1]) {
+            size[0] = size[1] * ratioVal;
+        } else {
+            size[1] = size[0] / ratioVal;
+        }
+    }
+    return size;
+};
+SizeConstraint.prototype.render = function render() {
+    return this._entityId;
+};
+SizeConstraint.prototype.commit = function (context) {
+    return {
+        align: this.options.align || context.align,
+        origin: this.options.origin || context.origin,
+        size: this.calcSize(context.size),
+        target: this._node.render()
+    };
+};
+module.exports = SizeConstraint;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],30:[function(require,module,exports){
+(function (global){
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Utility'] : typeof global !== 'undefined' ? global['famous']['utilities']['Utility'] : null;
+var ContainerSurface = typeof window !== 'undefined' ? window['famous']['surfaces']['ContainerSurface'] : typeof global !== 'undefined' ? global['famous']['surfaces']['ContainerSurface'] : null;
 var LayoutController = require('../LayoutController');
 var ScrollController = require('../ScrollController');
 var WheelLayout = require('../layouts/WheelLayout');
@@ -5931,9 +6951,11 @@ function _createOverlay() {
     this.add(this.overlay);
 }
 module.exports = DatePicker;
-},{"../LayoutController":5,"../LayoutUtility":8,"../ScrollController":9,"../VirtualViewSequence":10,"../layouts/ProportionalLayout":19,"../layouts/WheelLayout":21,"./DatePickerComponents":23}],23:[function(require,module,exports){
-var Surface = window.famous.core.Surface;
-var EventHandler = window.famous.core.EventHandler;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../LayoutController":5,"../LayoutUtility":8,"../ScrollController":9,"../VirtualViewSequence":11,"../layouts/ProportionalLayout":20,"../layouts/WheelLayout":22,"./DatePickerComponents":31}],31:[function(require,module,exports){
+(function (global){
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var EventHandler = typeof window !== 'undefined' ? window['famous']['core']['EventHandler'] : typeof global !== 'undefined' ? global['famous']['core']['EventHandler'] : null;
 function decimal1(date) {
     return '' + date[this.get]();
 }
@@ -6219,9 +7241,11 @@ module.exports = {
     Second: Second,
     Millisecond: Millisecond
 };
-},{}],24:[function(require,module,exports){
-var Surface = window.famous.core.Surface;
-var View = window.famous.core.View;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],32:[function(require,module,exports){
+(function (global){
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
 var LayoutController = require('../LayoutController');
 var TabBarLayout = require('../layouts/TabBarLayout');
 function TabBar(options) {
@@ -6381,13 +7405,15 @@ TabBar.prototype.getSize = function () {
     return this.options.size || (this.layout ? this.layout.getSize() : View.prototype.getSize.call(this));
 };
 module.exports = TabBar;
-},{"../LayoutController":5,"../layouts/TabBarLayout":20}],25:[function(require,module,exports){
-var View = window.famous.core.View;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../LayoutController":5,"../layouts/TabBarLayout":21}],33:[function(require,module,exports){
+(function (global){
+var View = typeof window !== 'undefined' ? window['famous']['core']['View'] : typeof global !== 'undefined' ? global['famous']['core']['View'] : null;
 var AnimationController = require('../AnimationController');
 var TabBar = require('./TabBar');
 var LayoutDockHelper = require('../helpers/LayoutDockHelper');
 var LayoutController = require('../LayoutController');
-var Easing = window.famous.transitions.Easing;
+var Easing = typeof window !== 'undefined' ? window['famous']['transitions']['Easing'] : typeof global !== 'undefined' ? global['famous']['transitions']['Easing'] : null;
 function TabBarController(options) {
     View.apply(this, arguments);
     _createRenderables.call(this);
@@ -6509,7 +7535,8 @@ TabBarController.prototype.getSelectedItemIndex = function () {
     return this.tabBar.getSelectedItemIndex();
 };
 module.exports = TabBarController;
-},{"../AnimationController":1,"../LayoutController":5,"../helpers/LayoutDockHelper":11,"./TabBar":24}],26:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../AnimationController":1,"../LayoutController":5,"../helpers/LayoutDockHelper":12,"./TabBar":32}],34:[function(require,module,exports){
 if (typeof famousflex === 'undefined') {
     famousflex = {};
 }
@@ -6524,6 +7551,7 @@ famousflex.LayoutUtility = require('./src/LayoutUtility');
 famousflex.ScrollController = require('./src/ScrollController');
 famousflex.VirtualViewSequence = require('./src/VirtualViewSequence');
 famousflex.AnimationController = require('./src/AnimationController');
+famousflex.ViewController = require('./src/ViewController');
 
 famousflex.widgets = famousflex.widgets || {};
 famousflex.widgets.DatePicker = require('./src/widgets/DatePicker');
@@ -6544,4 +7572,13 @@ famousflex.layouts.WheelLayout = require('./src/layouts/WheelLayout');
 famousflex.helpers = famousflex.helpers || {};
 famousflex.helpers.LayoutDockHelper = require('./src/helpers/LayoutDockHelper');
 
-},{"./src/AnimationController":1,"./src/FlexScrollView":2,"./src/FlowLayoutNode":3,"./src/LayoutContext":4,"./src/LayoutController":5,"./src/LayoutNode":6,"./src/LayoutNodeManager":7,"./src/LayoutUtility":8,"./src/ScrollController":9,"./src/VirtualViewSequence":10,"./src/helpers/LayoutDockHelper":11,"./src/layouts/CollectionLayout":12,"./src/layouts/CoverLayout":13,"./src/layouts/CubeLayout":14,"./src/layouts/GridLayout":15,"./src/layouts/HeaderFooterLayout":16,"./src/layouts/ListLayout":17,"./src/layouts/NavBarLayout":18,"./src/layouts/ProportionalLayout":19,"./src/layouts/WheelLayout":21,"./src/widgets/DatePicker":22,"./src/widgets/TabBar":24,"./src/widgets/TabBarController":25}]},{},[26]);
+famousflex.views = famousflex.views || {};
+famousflex.views.AnimatedIcon = require('./src/views/AnimatedIcon');
+famousflex.views.AutoFontSizeSurface = require('./src/views/AutoFontSizeSurface');
+famousflex.views.AutosizeTextareaSurface = require('./src/views/AutosizeTextareaSurface');
+famousflex.views.BkImageSurface = require('./src/views/BkImageSurface');
+famousflex.views.KenBurnsContainer = require('./src/views/KenBurnsContainer');
+famousflex.views.RefreshLoader = require('./src/views/RefreshLoader');
+famousflex.views.SizeConstraint = require('./src/views/SizeConstraint');
+
+},{"./src/AnimationController":1,"./src/FlexScrollView":2,"./src/FlowLayoutNode":3,"./src/LayoutContext":4,"./src/LayoutController":5,"./src/LayoutNode":6,"./src/LayoutNodeManager":7,"./src/LayoutUtility":8,"./src/ScrollController":9,"./src/ViewController":10,"./src/VirtualViewSequence":11,"./src/helpers/LayoutDockHelper":12,"./src/layouts/CollectionLayout":13,"./src/layouts/CoverLayout":14,"./src/layouts/CubeLayout":15,"./src/layouts/GridLayout":16,"./src/layouts/HeaderFooterLayout":17,"./src/layouts/ListLayout":18,"./src/layouts/NavBarLayout":19,"./src/layouts/ProportionalLayout":20,"./src/layouts/WheelLayout":22,"./src/views/AnimatedIcon":23,"./src/views/AutoFontSizeSurface":24,"./src/views/AutosizeTextareaSurface":25,"./src/views/BkImageSurface":26,"./src/views/KenBurnsContainer":27,"./src/views/RefreshLoader":28,"./src/views/SizeConstraint":29,"./src/widgets/DatePicker":30,"./src/widgets/TabBar":32,"./src/widgets/TabBarController":33}]},{},[34]);
