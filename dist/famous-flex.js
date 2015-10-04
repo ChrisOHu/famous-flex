@@ -308,6 +308,353 @@ define('famous-flex/LayoutUtility',['require','exports','module','famous/utiliti
  *
  * @author: Hein Rutjes (IjzerenHein)
  * @license MIT
+ * @copyright Gloey Apps, 2015
+ */
+
+/*global console*/
+/*eslint no-console:0 */
+
+function assert(value, message) {
+    if (!value) {
+        //debugger;
+        throw new Error(message);
+    }
+}
+
+/**
+ * Own implementation of ViewSequence which doesn't suck
+ *
+ * @module
+ */
+define('famous-flex/LinkedListViewSequence',['require','exports','module'],function(require, exports, module) {
+
+    /**
+     * @class
+     * @param {Object} options Configurable options.
+     * @alias module:LinkedListViewSequence
+     */
+    function LinkedListViewSequence(items) {
+        if (Array.isArray(items)) {
+            this._ = new (this.constructor.Backing)(this);
+            for (var i = 0; i < items.length; i++) {
+                this.push(items[i]);
+            }
+        }
+        else {
+            this._ = items || new (this.constructor.Backing)(this);
+        }
+    }
+
+     LinkedListViewSequence.Backing = function Backing() {
+        this.length = 0;
+        //this.head = undefined;
+        //this.tail = undefined;
+    };
+
+    /**
+     * Get head node.
+     *
+     * @return {LinkedListViewSequence} head node.
+     */
+    LinkedListViewSequence.prototype.getHead = function() {
+        return this._.head;
+    };
+
+    /**
+     * Get tail node.
+     *
+     * @return {LinkedListViewSequence} tail node.
+     */
+    LinkedListViewSequence.prototype.getTail = function() {
+        return this._.tail;
+    };
+
+    /**
+     * Get previous node.
+     *
+     * @return {LinkedListViewSequence} previous node.
+     */
+    LinkedListViewSequence.prototype.getPrevious = function() {
+        return this._prev;
+    };
+
+    /**
+     * Get next node.
+     *
+     * @return {LinkedListViewSequence} next node.
+     */
+    LinkedListViewSequence.prototype.getNext = function() {
+        return this._next;
+    };
+
+    /**
+     * Gets the value of this node.
+     *
+     * @return {Renderable} surface/view
+     */
+    LinkedListViewSequence.prototype.get = function() {
+        return this._value;
+    };
+
+    /**
+     * Sets the value of this node.
+     *
+     * @param {Renderable} value surface/view
+     */
+    LinkedListViewSequence.prototype.set = function(value) {
+        this._value = value;
+        return this;
+    };
+
+    /**
+     * Get the index of the node.
+     *
+     * @return {Number} Index of node.
+     */
+    LinkedListViewSequence.prototype.getIndex = function() {
+        return this._value ? this.indexOf(this._value) : 0;
+    };
+
+    /**
+     * Get human readable string verion of the node.
+     *
+     * @return {String} node as a human readable string
+     */
+    LinkedListViewSequence.prototype.toString = function() {
+        return '' + this.getIndex();
+    };
+
+    /**
+     * Gets the index of a given render-node.
+     *
+     * @return {Number} Index or -1 when not found.
+     */
+    LinkedListViewSequence.prototype.indexOf = function(item) {
+        var sequence = this._.head;
+        var index = 0;
+        while (sequence) {
+            if (sequence._value === item) {
+                return index;
+            }
+            index++;
+            sequence = sequence._next;
+        }
+        return -1;
+    };
+
+    /**
+     * Gets the view-sequence item at the given index.
+     */
+    LinkedListViewSequence.prototype.findByIndex = function(index) {
+        index = (index === -1) ? (this._.length - 1) : index;
+        if ((index < 0) || (index >= this._.length)) {
+            return undefined;
+        }
+
+        // search for specific index
+        var searchIndex;
+        var searchSequence;
+        if (index > (this._.length / 2)) {
+            // start searching from the tail
+            searchSequence = this._.tail;
+            searchIndex = this._.length - 1;
+            while (searchIndex > index) {
+                searchSequence = searchSequence._prev;
+                searchIndex--;
+            }
+        }
+        else {
+            // start searching from the head
+            searchSequence = this._.head;
+            searchIndex = 0;
+            while (searchIndex < index) {
+                searchSequence = searchSequence._next;
+                searchIndex++;
+            }
+        }
+        return searchSequence;
+    };
+
+    /**
+     * Gets the view-sequence item at the given index.
+     */
+    LinkedListViewSequence.prototype.findByValue = function(value) {
+        var sequence = this._.head;
+        while (sequence) {
+            if (sequence.get() === value) {
+                return sequence;
+            }
+            sequence = sequence._next;
+        }
+        return undefined;
+    };
+
+    /**
+     * Pushes an item to the end of the view-sequence.
+     *
+     * @return {LinkedListViewSequence} view-sequence node
+     */
+    LinkedListViewSequence.prototype.insert = function(index, renderNode) {
+        index = (index === -1) ? this._.length : index;
+        /*if (this._.debug) {
+            console.log(this._.logName + ': insert (length: ' + this._.length + ')');
+        }*/
+        if (!this._.length) {
+            assert(index === 0, 'inserting in empty view-sequence, but not at index 0 (but ' + index + ' instead)');
+            this._value = renderNode;
+            this._.head = this;
+            this._.tail = this;
+            this._.length = 1;
+            return this;
+        }
+        var sequence;
+        if (index === 0) {
+            // insert at head (quick!)
+            sequence = new LinkedListViewSequence(this._);
+            sequence._value = renderNode;
+            sequence._next = this._.head;
+            this._.head._prev = sequence;
+            this._.head = sequence;
+        }
+        else if (index === this._.length) {
+            // insert at tail (quick!)
+            sequence = new LinkedListViewSequence(this._);
+            sequence._value = renderNode;
+            sequence._prev = this._.tail;
+            this._.tail._next = sequence;
+            this._.tail = sequence;
+        }
+        else {
+            // search for specific index (slow!) ... but fricking solid famo.us...
+            var searchIndex;
+            var searchSequence;
+            assert((index > 0) && (index < this._.length), 'invalid insert index: ' + index + ' (length: ' + this._.length + ')');
+            if (index > (this._.length / 2)) {
+                // start searching from the tail
+                searchSequence = this._.tail;
+                searchIndex = this._.length - 1;
+                while (searchIndex >= index) {
+                    searchSequence = searchSequence._prev;
+                    searchIndex--;
+                }
+            }
+            else {
+                // start searching from the head
+                searchSequence = this._.head;
+                searchIndex = 1;
+                while (searchIndex < index) {
+                    searchSequence = searchSequence._next;
+                    searchIndex++;
+                }
+            }
+            // insert after searchSequence
+            sequence = new LinkedListViewSequence(this._);
+            sequence._prev = searchSequence;
+            sequence._next = searchSequence._next;
+            searchSequence._next._prev = sequence;
+            searchSequence._next = sequence;
+        }
+        this._.length++;
+        return sequence;
+    };
+
+    /**
+     * Removes the view-sequence item at the given index.
+     *
+     * @param {LinkedListViewSequence} sequence Node to remove
+     * @return {LinkedListViewSequence} New current view-sequence node to display.
+     */
+    LinkedListViewSequence.prototype.remove = function(sequence) {
+        /*if (this._.debug) {
+            console.log(this._.logName + ': remove (length: ' + this._.length + ')');
+        }*/
+        if (sequence._prev && sequence._next) {
+            sequence._prev._next = sequence._next;
+            sequence._next._prev = sequence._prev;
+            this._value = undefined;
+            this._.length--;
+            return (sequence === this) ? sequence._prev : this;
+        }
+        else if (!sequence._prev && !sequence._next) {
+            assert(sequence === this, 'only one sequence exists, should be this one');
+            assert(this._value, 'last node should have a value');
+            assert(this._.head, 'head is invalid');
+            assert(this._.tail, 'tail is invalid');
+            assert(this._.length === 1, 'length should be 1');
+            this._value = undefined;
+            this._.head = undefined;
+            this._.prev = undefined;
+            this._.length--;
+            return this;
+        }
+        else if (!sequence._prev) {
+            assert(this._.head === sequence, 'head is invalid');
+            sequence._next._prev = undefined;
+            this._.head = sequence._next;
+            this._.length--;
+            return (sequence === this) ? this._.head : this;
+        }
+        else {
+            assert(!sequence._next, 'next should be empty');
+            assert(this._.tail === sequence, 'tail is invalid');
+            sequence._prev._next = undefined;
+            this._.tail = sequence._prev;
+            this._.length--;
+            return (sequence === this) ? this._.tail : this;
+        }
+    };
+
+    LinkedListViewSequence.prototype.getLength = function() {
+        return this._.length;
+    };
+
+    LinkedListViewSequence.prototype.clear = function() {
+        var sequence = this; //eslint-disable-line consistent-this
+        while (this._.length) {
+          sequence = sequence.remove(this._.tail);
+        }
+        return sequence;
+    };
+
+    LinkedListViewSequence.prototype.unshift = function(renderNode) {
+        return this.insert(0, renderNode);
+    };
+
+    LinkedListViewSequence.prototype.push = function(renderNode) {
+        return this.insert(-1, renderNode);
+    };
+
+    LinkedListViewSequence.prototype.splice = function(index, remove, items) {
+        if (console.error) {
+            console.error('LinkedListViewSequence.splice is not supported');
+        }
+    };
+
+    LinkedListViewSequence.prototype.swap = function(index, index2) {
+        var sequence1 = this.findByIndex(index);
+        if (!sequence1) {
+            throw new Error('Invalid first index specified to swap: ' + index);
+        }
+        var sequence2 = this.findByIndex(index2);
+        if (!sequence2) {
+            throw new Error('Invalid second index specified to swap: ' + index2);
+        }
+        var swap = sequence1._value;
+        sequence1._value = sequence2._value;
+        sequence2._value = swap;
+        return this;
+    };
+
+    module.exports = LinkedListViewSequence;
+});
+
+/**
+ * This Source Code is licensed under the MIT license. If a copy of the
+ * MIT-license was not distributed with this file, You can obtain one at:
+ * http://opensource.org/licenses/mit-license.html.
+ *
+ * @author: Hein Rutjes (IjzerenHein)
+ * @license MIT
  * @copyright Gloey Apps, 2014
  */
 
@@ -2427,12 +2774,13 @@ define('famous-flex/helpers/LayoutDockHelper',['require','exports','module','../
  *
  * @module
  */
-define('famous-flex/LayoutController',['require','exports','module','famous/utilities/Utility','famous/core/Entity','famous/core/ViewSequence','famous/core/OptionsManager','famous/core/EventHandler','./LayoutUtility','./LayoutNodeManager','./LayoutNode','./FlowLayoutNode','famous/core/Transform','./helpers/LayoutDockHelper'],function(require, exports, module) {
+define('famous-flex/LayoutController',['require','exports','module','famous/utilities/Utility','famous/core/Entity','famous/core/ViewSequence','./LinkedListViewSequence','famous/core/OptionsManager','famous/core/EventHandler','./LayoutUtility','./LayoutNodeManager','./LayoutNode','./FlowLayoutNode','famous/core/Transform','./helpers/LayoutDockHelper'],function(require, exports, module) {
 
     // import dependencies
     var Utility = require('famous/utilities/Utility');
     var Entity = require('famous/core/Entity');
     var ViewSequence = require('famous/core/ViewSequence');
+    var LinkedListViewSequence = require('./LinkedListViewSequence');
     var OptionsManager = require('famous/core/OptionsManager');
     var EventHandler = require('famous/core/EventHandler');
     var LayoutUtility = require('./LayoutUtility');
@@ -2447,7 +2795,7 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
      * @param {Object} options Options.
      * @param {Function|Object} [options.layout] Layout function or layout-literal.
      * @param {Object} [options.layoutOptions] Options to pass in to the layout-function.
-     * @param {Array|ViewSequence|Object} [options.dataSource] Array, ViewSequence or Object with key/value pairs.
+     * @param {Array|LinkedListViewSequence|Object} [options.dataSource] Array, LinkedListViewSequence or Object with key/value pairs.
      * @param {Utility.Direction} [options.direction] Direction to layout into (e.g. Utility.Direction.Y) (when omitted the default direction of the layout is used)
      * @param {Bool} [options.flow] Enables flow animations when the layout changes (default: `false`).
      * @param {Object} [options.flowOptions] Options used by nodes when reflowing.
@@ -2583,7 +2931,7 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
      * @param {Options} options An object of configurable options for the LayoutController instance.
      * @param {Function|Object} [options.layout] Layout function or layout-literal.
      * @param {Object} [options.layoutOptions] Options to pass in to the layout-function.
-     * @param {Array|ViewSequence|Object} [options.dataSource] Array, ViewSequence or Object with key/value pairs.
+     * @param {Array|LinkedListViewSequence|Object} [options.dataSource] Array, LinkedListViewSequence or Object with key/value pairs.
      * @param {Utility.Direction} [options.direction] Direction to layout into (e.g. Utility.Direction.Y) (when omitted the default direction of the layout is used)
      * @param {Object} [options.flowOptions] Options used by nodes when reflowing.
      * @param {Bool} [options.flowOptions.reflowOnResize] Smoothly reflows renderables on resize (only used when flow = true) (default: `true`).
@@ -2660,26 +3008,19 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
      * Helper function to enumerate all the renderables in the datasource
      */
     function _forEachRenderable(callback) {
-        var dataSource = this._dataSource;
-        if (dataSource instanceof Array) {
-            for (var i = 0, j = dataSource.length; i < j; i++) {
-                callback(dataSource[i]);
-            }
-        }
-        else if (dataSource instanceof ViewSequence) {
-            var renderable;
-            while (dataSource) {
-                renderable = dataSource.get();
-                if (!renderable) {
-                    break;
-                }
-                callback(renderable);
-                dataSource = dataSource.getNext();
+        if (this._nodesById) {
+            for (var key in this._nodesById) {
+                callback(this._nodesById[key]);
             }
         }
         else {
-            for (var key in dataSource) {
-                callback(dataSource[key]);
+            var sequence = this._viewSequence.getHead();
+            while (sequence) {
+                var renderable = sequence.get();
+                if (renderable) {
+                    callback(renderable);
+                }
+                sequence = sequence.getNext();
             }
         }
     }
@@ -2688,23 +3029,30 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
      * Sets the collection of renderables which are layed out according to
      * the layout-function.
      *
-     * The data-source can be either an Array, ViewSequence or Object
+     * The data-source can be either an Array, LinkedListViewSequence or Object
      * with key/value pairs.
      *
-     * @param {Array|Object|ViewSequence} dataSource Array, ViewSequence or Object.
+     * @param {Array|Object|LinkedListViewSequence} dataSource Array, LinkedListViewSequence or Object.
      * @return {LayoutController} this
      */
     LayoutController.prototype.setDataSource = function(dataSource) {
         this._dataSource = dataSource;
-        this._initialViewSequence = undefined;
         this._nodesById = undefined;
-        if (dataSource instanceof Array) {
-            this._viewSequence = new ViewSequence(dataSource);
-            this._initialViewSequence = this._viewSequence;
+        if (dataSource instanceof ViewSequence) {
+            console.warn('The stock famo.us ViewSequence is no longer supported as it is too buggy');
+            console.warn('It has been automatically converted to the safe LinkedListViewSequence.');
+            console.warn('Please refactor your code by using LinkedListViewSequence.');
+            this._dataSource = new LinkedListViewSequence(dataSource._.array);
+            this._viewSequence = this._dataSource;
         }
-        else if ((dataSource instanceof ViewSequence) || dataSource.getNext) {
+        else if (dataSource instanceof Array) {
+            this._viewSequence = new LinkedListViewSequence(dataSource);
+        }
+        else if (dataSource instanceof LinkedListViewSequence) {
             this._viewSequence = dataSource;
-            this._initialViewSequence = dataSource;
+        }
+        else if (dataSource.getNext) {
+            this._viewSequence = dataSource;
         }
         else if (dataSource instanceof Object){
             this._nodesById = dataSource;
@@ -2730,7 +3078,7 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
     /**
      * Get the data-source.
      *
-     * @return {Array|ViewSequence|Object} data-source
+     * @return {Array|LinkedListViewSequence|Object} data-source
      */
     LayoutController.prototype.getDataSource = function() {
         return this._dataSource;
@@ -2984,39 +3332,14 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
         // Add the renderable using an index
         else {
 
-            // Create data-source if neccesary
+            // Create own data-source if neccesary
             if (this._dataSource === undefined) {
-                this._dataSource = [];
-                this._viewSequence = new ViewSequence(this._dataSource);
-                this._initialViewSequence = this._viewSequence;
+                this._dataSource = new LinkedListViewSequence();
+                this._viewSequence = this._dataSource;
             }
 
-            // Insert into array
-            var dataSource = this._viewSequence || this._dataSource;
-            var array = _getDataSourceArray.call(this);
-            if (array && (indexOrId === array.length)) {
-                indexOrId = -1;
-            }
-            if (indexOrId === -1) {
-                dataSource.push(renderable);
-            }
-            else if (indexOrId === 0) {
-                if (dataSource === this._viewSequence) {
-                    dataSource.splice(0, 0, renderable);
-                    if (this._viewSequence.getIndex() === 0) {
-                        var nextViewSequence = this._viewSequence.getNext();
-                        if (nextViewSequence && nextViewSequence.get()) {
-                            this._viewSequence = nextViewSequence;
-                        }
-                    }
-                }
-                else {
-                    dataSource.splice(0, 0, renderable);
-                }
-            }
-            else {
-                dataSource.splice(indexOrId, 0, renderable);
-            }
+            // Insert data
+            this._viewSequence.insert(indexOrId, renderable);
         }
 
         // When a custom insert-spec was specified, store that in the layout-node
@@ -3055,6 +3378,9 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
      * Helper function for finding the view-sequence node at the given position.
      */
     function _getViewSequenceAtIndex(index, startViewSequence) {
+        if (this._viewSequence.getAtIndex) {
+            return this._viewSequence.getAtIndex(index, startViewSequence);
+        }
         var viewSequence = startViewSequence || this._viewSequence;
         var i = viewSequence ? viewSequence.getIndex() : index;
         if (index > i) {
@@ -3091,19 +3417,6 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
     }
 
     /**
-     * Helper that return the underlying array datasource if available.
-     */
-    function _getDataSourceArray() {
-      if (Array.isArray(this._dataSource)) {
-        return this._dataSource;
-      }
-      else if (this._viewSequence || this._viewSequence._) {
-        return this._viewSequence._.array;
-      }
-      return undefined;
-    }
-
-    /**
      * Get the renderable at the given index or Id.
      *
      * @param {Number|String} indexOrId Index within dataSource array or id (String)
@@ -3120,29 +3433,14 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
     /**
      * Swaps two renderables at the given positions.
      *
-     * This method is only supported for dataSources of type Array or ViewSequence.
+     * This method is only supported for dataSources of type Array or LinkedListViewSequence.
      *
      * @param {Number} index Index of the renderable to swap
      * @param {Number} index2 Index of the renderable to swap with
      * @return {LayoutController} this
      */
     LayoutController.prototype.swap = function(index, index2) {
-        var array = _getDataSourceArray.call(this);
-        if (!array) {
-            throw '.swap is only supported for dataSources of type Array or ViewSequence';
-        }
-        if (index === index2) {
-          return this;
-        }
-        if ((index < 0) || (index >= array.length)) {
-          throw 'Invalid index (' + index + ') specified to .swap';
-        }
-        if ((index2 < 0) || (index2 >= array.length)) {
-          throw 'Invalid second index (' + index2 + ') specified to .swap';
-        }
-        var renderNode = array[index];
-        array[index] = array[index2];
-        array[index2] = renderNode;
+        this._viewSequence.swap(index, index2);
         this._isDirty = true;
         return this;
     };
@@ -3171,16 +3469,13 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
             }
             return oldRenderable;
         }
-        var array = _getDataSourceArray.call(this);
-        if (!array) {
-          return undefined;
+        var sequence = this._viewSequence.findByIndex(indexOrId);
+        if (!sequence) {
+            throw 'Invalid index (' + indexOrId + ') specified to .replace';
         }
-        if ((indexOrId < 0) || (indexOrId >= array.length)) {
-          throw 'Invalid index (' + indexOrId + ') specified to .replace';
-        }
-        oldRenderable = array[indexOrId];
+        oldRenderable = sequence.get();
+        sequence.set(renderable);
         if (oldRenderable !== renderable) {
-          array[indexOrId] = renderable;
           this._isDirty = true;
         }
         return oldRenderable;
@@ -3189,25 +3484,19 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
     /**
      * Moves a renderable to a new index.
      *
-     * This method is only supported for dataSources of type Array or ViewSequence.
+     * This method is only supported for dataSources of type Array or LinkedListViewSequence.
      *
      * @param {Number} index Index of the renderable to move.
      * @param {Number} newIndex New index of the renderable.
      * @return {LayoutController} this
      */
     LayoutController.prototype.move = function(index, newIndex) {
-        var array = _getDataSourceArray.call(this);
-        if (!array) {
-            throw '.move is only supported for dataSources of type Array or ViewSequence';
-        }
-        if ((index < 0) || (index >= array.length)) {
+        var sequence = this._viewSequence.findByIndex(index);
+        if (!sequence) {
           throw 'Invalid index (' + index + ') specified to .move';
         }
-        if ((newIndex < 0) || (newIndex >= array.length)) {
-          throw 'Invalid newIndex (' + newIndex + ') specified to .move';
-        }
-        var item = array.splice(index, 1)[0];
-        array.splice(newIndex, 0, item);
+        this._viewSequence = this._viewSequence.remove(sequence);
+        this._viewSequence.insert(newIndex, sequence.get());
         this._isDirty = true;
         return this;
     };
@@ -3246,35 +3535,20 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
                 }
             }
         }
-
-        // Remove the renderable using an index
-        else if ((indexOrId instanceof Number) || (typeof indexOrId === 'number')) {
-            var array = _getDataSourceArray.call(this);
-            if (!array || (indexOrId < 0) || (indexOrId >= array.length)) {
-                throw 'Invalid index (' + indexOrId + ') specified to .remove (or dataSource doesn\'t support remove)';
-            }
-            renderNode = array[indexOrId];
-            this._dataSource.splice(indexOrId, 1);
-        }
-
-        // Remove by renderable
         else {
-            indexOrId = this._dataSource.indexOf(indexOrId);
-            if (indexOrId >= 0) {
-                this._dataSource.splice(indexOrId, 1);
-                renderNode = indexOrId;
-            }
-        }
 
-        // When a node is removed from the view-sequence, the current this._viewSequence
-        // node may not be part of the valid view-sequence anymore. This seems to be a bug
-        // in the famo.us ViewSequence implementation/concept. The following check was added
-        // to ensure that always a valid viewSequence node is selected into the ScrollView.
-        if (this._viewSequence && renderNode) {
-            var viewSequence = _getViewSequenceAtIndex.call(this, this._viewSequence.getIndex(), this._initialViewSequence);
-            viewSequence = viewSequence || _getViewSequenceAtIndex.call(this, this._viewSequence.getIndex() - 1, this._initialViewSequence);
-            viewSequence = viewSequence || this._dataSource;
-            this._viewSequence = viewSequence;
+            // Remove the renderable
+            var sequence;
+            if ((indexOrId instanceof Number) || (typeof indexOrId === 'number')) {
+                sequence = this._viewSequence.findByIndex(indexOrId);
+            }
+            else {
+                sequence = this._viewSequence.findByValue(indexOrId);
+            }
+            if (sequence) {
+                renderNode = sequence.get();
+                this._viewSequence = this._viewSequence.remove(sequence);
+            }
         }
 
         // When a custom remove-spec was specified, store that in the layout-node
@@ -3314,8 +3588,8 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
                 this._isDirty = true;
             }
         }
-        else if (this._dataSource){
-            this.setDataSource([]);
+        else if (this._viewSequence){
+            this._viewSequence = this._viewSequence.clear();
         }
         if (removeSpec) {
             var node = this._nodes.getStartEnumNode();
@@ -3558,7 +3832,7 @@ define('famous-flex/LayoutController',['require','exports','module','famous/util
  * Inherited from: [LayoutController](./LayoutController.md)
  * @module
  */
-define('famous-flex/ScrollController',['require','exports','module','./LayoutUtility','./LayoutController','./LayoutNode','./FlowLayoutNode','./LayoutNodeManager','famous/surfaces/ContainerSurface','famous/core/Transform','famous/core/EventHandler','famous/core/Group','famous/math/Vector','famous/physics/PhysicsEngine','famous/physics/bodies/Particle','famous/physics/forces/Drag','famous/physics/forces/Spring','famous/inputs/ScrollSync','famous/core/ViewSequence'],function(require, exports, module) {
+define('famous-flex/ScrollController',['require','exports','module','./LayoutUtility','./LayoutController','./LayoutNode','./FlowLayoutNode','./LayoutNodeManager','famous/surfaces/ContainerSurface','famous/core/Transform','famous/core/EventHandler','famous/core/Group','famous/math/Vector','famous/physics/PhysicsEngine','famous/physics/bodies/Particle','famous/physics/forces/Drag','famous/physics/forces/Spring','famous/inputs/ScrollSync','./LinkedListViewSequence'],function(require, exports, module) {
 
     // import dependencies
     var LayoutUtility = require('./LayoutUtility');
@@ -3576,7 +3850,7 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
     var Drag = require('famous/physics/forces/Drag');
     var Spring = require('famous/physics/forces/Spring');
     var ScrollSync = require('famous/inputs/ScrollSync');
-    var ViewSequence = require('famous/core/ViewSequence');
+    var LinkedListViewSequence = require('./LinkedListViewSequence');
 
     /**
      * Boudary reached detection
@@ -4606,7 +4880,7 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
      * following properties. Example:
      * ```javascript
      * {
-     *   viewSequence: {ViewSequence},
+     *   viewSequence: {LinkedListViewSequence},
      *   index: {Number},
      *   renderNode: {renderable},
      *   visiblePerc: {Number} 0..1
@@ -4942,13 +5216,13 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
      * When the node is already visible, nothing happens. If the node is not entirely visible
      * the view is scrolled as much as needed to make it entirely visibl.
      *
-     * @param {Number|ViewSequence|Renderable} node index, renderNode or ViewSequence
+     * @param {Number|LinkedListViewSequence|Renderable} node index, renderNode or LinkedListViewSequence
      * @return {ScrollController} this
      */
     ScrollController.prototype.ensureVisible = function(node) {
 
         // Convert argument into renderNode
-        if (node instanceof ViewSequence) {
+        if (node instanceof LinkedListViewSequence) {
             node = node.get();
         }
         else if ((node instanceof Number) || (typeof node === 'number')) {
@@ -6006,7 +6280,7 @@ define('famous-flex/FlexScrollView',['require','exports','module','./LayoutUtili
      *
      * This function is a shim provided for compatibility with the stock famo.us Scrollview.
      *
-     * @param {Array|ViewSequence} node Either an array of renderables or a Famous viewSequence.
+     * @param {Array|LinkedListViewSequence} node Either an array of renderables or a viewSequence.
      * @return {FlexScrollView} this
      */
     FlexScrollView.prototype.sequenceFrom = function(node) {
@@ -6018,7 +6292,7 @@ define('famous-flex/FlexScrollView',['require','exports','module','./LayoutUtili
      *
      * This function is a shim provided for compatibility with the stock famo.us Scrollview.
      *
-     * @return {Number} The current index of the ViewSequence
+     * @return {Number} Index of the first visible renderable.
      */
     FlexScrollView.prototype.getCurrentIndex = function() {
         var item = this.getFirstVisibleItem();
@@ -6733,6 +7007,26 @@ define('famous-flex/VirtualViewSequence',['require','exports','module','famous/c
     VirtualViewSequence.prototype.swap = function() {
         if (console.error) {
             console.error('VirtualViewSequence.swap is not supported and should not be called');
+        }
+    };
+
+    /**
+     * Not supported
+     * @private
+     */
+    VirtualViewSequence.prototype.insert = function() {
+        if (console.error) {
+            console.error('VirtualViewSequence.insert is not supported and should not be called');
+        }
+    };
+
+    /**
+     * Not supported
+     * @private
+     */
+    VirtualViewSequence.prototype.remove = function() {
+        if (console.error) {
+            console.error('VirtualViewSequence.remove is not supported and should not be called');
         }
     };
 
