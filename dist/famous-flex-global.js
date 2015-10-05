@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.5
-* @generated 04-10-2015
+* @generated 05-10-2015
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -7708,6 +7708,7 @@ famousflex.ScrollController = require('./src/ScrollController');
 famousflex.VirtualViewSequence = require('./src/VirtualViewSequence');
 famousflex.AnimationController = require('./src/AnimationController');
 famousflex.ViewController = require('./src/ViewController');
+famousflex.LinkedListViewSequence = require('./src/LinkedListViewSequence');
 
 famousflex.widgets = famousflex.widgets || {};
 famousflex.widgets.DatePicker = require('./src/widgets/DatePicker');
@@ -7737,4 +7738,4 @@ famousflex.views.KenBurnsContainer = require('./src/views/KenBurnsContainer');
 famousflex.views.RefreshLoader = require('./src/views/RefreshLoader');
 famousflex.views.SizeConstraint = require('./src/views/SizeConstraint');
 
-},{"./src/AnimationController":1,"./src/FlexScrollView":2,"./src/FlowLayoutNode":3,"./src/LayoutContext":4,"./src/LayoutController":5,"./src/LayoutNode":6,"./src/LayoutNodeManager":7,"./src/LayoutUtility":8,"./src/ScrollController":10,"./src/ViewController":11,"./src/VirtualViewSequence":12,"./src/helpers/LayoutDockHelper":13,"./src/layouts/CollectionLayout":14,"./src/layouts/CoverLayout":15,"./src/layouts/CubeLayout":16,"./src/layouts/GridLayout":17,"./src/layouts/HeaderFooterLayout":18,"./src/layouts/ListLayout":19,"./src/layouts/NavBarLayout":20,"./src/layouts/ProportionalLayout":21,"./src/layouts/WheelLayout":23,"./src/views/AnimatedIcon":24,"./src/views/AutoFontSizeSurface":25,"./src/views/AutosizeTextareaSurface":26,"./src/views/BkImageSurface":27,"./src/views/KenBurnsContainer":28,"./src/views/RefreshLoader":29,"./src/views/SizeConstraint":30,"./src/widgets/DatePicker":31,"./src/widgets/TabBar":33,"./src/widgets/TabBarController":34}]},{},[35]);
+},{"./src/AnimationController":1,"./src/FlexScrollView":2,"./src/FlowLayoutNode":3,"./src/LayoutContext":4,"./src/LayoutController":5,"./src/LayoutNode":6,"./src/LayoutNodeManager":7,"./src/LayoutUtility":8,"./src/LinkedListViewSequence":9,"./src/ScrollController":10,"./src/ViewController":11,"./src/VirtualViewSequence":12,"./src/helpers/LayoutDockHelper":13,"./src/layouts/CollectionLayout":14,"./src/layouts/CoverLayout":15,"./src/layouts/CubeLayout":16,"./src/layouts/GridLayout":17,"./src/layouts/HeaderFooterLayout":18,"./src/layouts/ListLayout":19,"./src/layouts/NavBarLayout":20,"./src/layouts/ProportionalLayout":21,"./src/layouts/WheelLayout":23,"./src/views/AnimatedIcon":24,"./src/views/AutoFontSizeSurface":25,"./src/views/AutosizeTextareaSurface":26,"./src/views/BkImageSurface":27,"./src/views/KenBurnsContainer":28,"./src/views/RefreshLoader":29,"./src/views/SizeConstraint":30,"./src/widgets/DatePicker":31,"./src/widgets/TabBar":33,"./src/widgets/TabBarController":34}]},{},[35]);

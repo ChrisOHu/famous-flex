@@ -56,6 +56,7 @@ module.exports = function(grunt) {
             { src: 'src/VirtualViewSequence.js', dest: 'docs/VirtualViewSequence.md' },
             { src: 'src/AnimationController.js', dest: 'docs/AnimationController.md' },
             { src: 'src/ViewController.js', dest: 'docs/ViewController.md' },
+            { src: 'src/LinkedListViewSequence.js', dest: 'docs/LinkedListViewSequence.md' },
             // widgets
             { src: 'src/widgets/DatePicker.js', dest: 'docs/widgets/DatePicker.md' },
             { src: 'src/widgets/TabBar.js', dest: 'docs/widgets/TabBar.md' },

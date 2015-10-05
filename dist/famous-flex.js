@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.5
-* @generated 04-10-2015
+* @generated 05-10-2015
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -12045,7 +12045,7 @@ define('famous-flex/views/SizeConstraint',['require','exports','module','famous/
     module.exports = SizeConstraint;
 });
 
-define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLayoutNode','famous-flex/LayoutContext','famous-flex/LayoutController','famous-flex/LayoutNode','famous-flex/LayoutNodeManager','famous-flex/LayoutUtility','famous-flex/ScrollController','famous-flex/VirtualViewSequence','famous-flex/AnimationController','famous-flex/ViewController','famous-flex/widgets/DatePicker','famous-flex/widgets/TabBar','famous-flex/widgets/TabBarController','famous-flex/layouts/CollectionLayout','famous-flex/layouts/CoverLayout','famous-flex/layouts/CubeLayout','famous-flex/layouts/GridLayout','famous-flex/layouts/HeaderFooterLayout','famous-flex/layouts/ListLayout','famous-flex/layouts/NavBarLayout','famous-flex/layouts/ProportionalLayout','famous-flex/layouts/WheelLayout','famous-flex/helpers/LayoutDockHelper','famous-flex/views/AnimatedIcon','famous-flex/views/AutoFontSizeSurface','famous-flex/views/AutosizeTextareaSurface','famous-flex/views/BkImageSurface','famous-flex/views/KenBurnsContainer','famous-flex/views/RefreshLoader','famous-flex/views/SizeConstraint'],function(require) {
+define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLayoutNode','famous-flex/LayoutContext','famous-flex/LayoutController','famous-flex/LayoutNode','famous-flex/LayoutNodeManager','famous-flex/LayoutUtility','famous-flex/ScrollController','famous-flex/VirtualViewSequence','famous-flex/AnimationController','famous-flex/ViewController','famous-flex/LinkedListViewSequence','famous-flex/widgets/DatePicker','famous-flex/widgets/TabBar','famous-flex/widgets/TabBarController','famous-flex/layouts/CollectionLayout','famous-flex/layouts/CoverLayout','famous-flex/layouts/CubeLayout','famous-flex/layouts/GridLayout','famous-flex/layouts/HeaderFooterLayout','famous-flex/layouts/ListLayout','famous-flex/layouts/NavBarLayout','famous-flex/layouts/ProportionalLayout','famous-flex/layouts/WheelLayout','famous-flex/helpers/LayoutDockHelper','famous-flex/views/AnimatedIcon','famous-flex/views/AutoFontSizeSurface','famous-flex/views/AutosizeTextareaSurface','famous-flex/views/BkImageSurface','famous-flex/views/KenBurnsContainer','famous-flex/views/RefreshLoader','famous-flex/views/SizeConstraint'],function(require) {
     require('famous-flex/FlexScrollView');
     require('famous-flex/FlowLayoutNode');
     require('famous-flex/LayoutContext');
@@ -12057,6 +12057,7 @@ define('template.js',['require','famous-flex/FlexScrollView','famous-flex/FlowLa
     require('famous-flex/VirtualViewSequence');
     require('famous-flex/AnimationController');
     require('famous-flex/ViewController');
+    require('famous-flex/LinkedListViewSequence');
 
     require('famous-flex/widgets/DatePicker');
     require('famous-flex/widgets/TabBar');
