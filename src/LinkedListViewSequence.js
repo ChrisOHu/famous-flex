@@ -11,6 +11,9 @@
 /*global console*/
 /*eslint no-console:0 */
 
+/**
+ * @private
+ */
 function assert(value, message) {
     if (!value) {
         //debugger;
@@ -19,7 +22,8 @@ function assert(value, message) {
 }
 
 /**
- * Own implementation of ViewSequence which doesn't suck
+ * Linked-list based implementation of a view-sequence which fixes
+ * several issues in the stock famo.us ViewSequence.
  *
  * @module
  */
@@ -42,11 +46,31 @@ define(function(require, exports, module) {
         }
     }
 
-     LinkedListViewSequence.Backing = function Backing() {
+    LinkedListViewSequence.Backing = function Backing() {
         this.length = 0;
         //this.head = undefined;
         //this.tail = undefined;
     };
+
+    /*LinkedListViewSequence.prototype.verifyIntegrity = function() {
+        var item = this._.head;
+        var count = 0;
+        while (item) {
+          assert(item._value, 'no rendernode at index: ' + count);
+          count++;
+          assert(count <= this._.length, 'head -> tail, node-count exceeds length: ' + count + ' > ' + this._.length);
+          item = item._next;
+        }
+        assert(count === this._.length, 'head -> tail, different count: ' + count + ' != ' + this._.length);
+        item = this._.tail;
+        count = 0;
+        while (item) {
+          count++;
+          assert(count <= this._.length, 'tail -> head, node-count exceeds length: ' + count + ' > ' + this._.length);
+          item = item._prev;
+        }
+        assert(count === this._.length, 'tail -> head, different count: ' + count + ' != ' + this._.length);
+    };*/
 
     /**
      * Get head node.
@@ -97,6 +121,7 @@ define(function(require, exports, module) {
      * Sets the value of this node.
      *
      * @param {Renderable} value surface/view
+     * @return {LinkedListViewSequence} this
      */
     LinkedListViewSequence.prototype.set = function(value) {
         this._value = value;
@@ -122,8 +147,9 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Gets the index of a given render-node.
+     * Finds the index of a given render-node.
      *
+     * @param {Renderable} item Render-node to find.
      * @return {Number} Index or -1 when not found.
      */
     LinkedListViewSequence.prototype.indexOf = function(item) {
@@ -140,7 +166,10 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Gets the view-sequence item at the given index.
+     * Finds the view-sequence item at the given index.
+     *
+     * @param {Number} index 0-based index.
+     * @return {LinkedListViewSequence} View-sequence node or undefined.
      */
     LinkedListViewSequence.prototype.findByIndex = function(index) {
         index = (index === -1) ? (this._.length - 1) : index;
@@ -173,7 +202,10 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Gets the view-sequence item at the given index.
+     * Finds the view-sequence node by the given renderable.
+     *
+     * @param {Renderable} value Render-node to search for.
+     * @return {LinkedListViewSequence} View-sequence node or undefined.
      */
     LinkedListViewSequence.prototype.findByValue = function(value) {
         var sequence = this._.head;
@@ -187,9 +219,11 @@ define(function(require, exports, module) {
     };
 
     /**
-     * Pushes an item to the end of the view-sequence.
+     * Inserts an item into the view-sequence.
      *
-     * @return {LinkedListViewSequence} view-sequence node
+     * @param {Number} index 0-based index (-1 inserts at the tail).
+     * @param {Renderable} renderNode Renderable to insert.
+     * @return {LinkedListViewSequence} newly inserted view-sequence node.
      */
     LinkedListViewSequence.prototype.insert = function(index, renderNode) {
         index = (index === -1) ? this._.length : index;
@@ -202,6 +236,7 @@ define(function(require, exports, module) {
             this._.head = this;
             this._.tail = this;
             this._.length = 1;
+            //this.verifyIntegrity();
             return this;
         }
         var sequence;
@@ -246,12 +281,14 @@ define(function(require, exports, module) {
             }
             // insert after searchSequence
             sequence = new LinkedListViewSequence(this._);
+            sequence._value = renderNode;
             sequence._prev = searchSequence;
             sequence._next = searchSequence._next;
             searchSequence._next._prev = sequence;
             searchSequence._next = sequence;
         }
         this._.length++;
+        //this.verifyIntegrity();
         return sequence;
     };
 
@@ -268,8 +305,8 @@ define(function(require, exports, module) {
         if (sequence._prev && sequence._next) {
             sequence._prev._next = sequence._next;
             sequence._next._prev = sequence._prev;
-            this._value = undefined;
             this._.length--;
+            //this.verifyIntegrity();
             return (sequence === this) ? sequence._prev : this;
         }
         else if (!sequence._prev && !sequence._next) {
@@ -280,8 +317,9 @@ define(function(require, exports, module) {
             assert(this._.length === 1, 'length should be 1');
             this._value = undefined;
             this._.head = undefined;
-            this._.prev = undefined;
+            this._.tail = undefined;
             this._.length--;
+            //this.verifyIntegrity();
             return this;
         }
         else if (!sequence._prev) {
@@ -289,6 +327,7 @@ define(function(require, exports, module) {
             sequence._next._prev = undefined;
             this._.head = sequence._next;
             this._.length--;
+            //this.verifyIntegrity();
             return (sequence === this) ? this._.head : this;
         }
         else {
@@ -297,26 +336,50 @@ define(function(require, exports, module) {
             sequence._prev._next = undefined;
             this._.tail = sequence._prev;
             this._.length--;
+            //this.verifyIntegrity();
             return (sequence === this) ? this._.tail : this;
         }
     };
 
+    /**
+     * Gets the number of items in the view-sequence.
+     *
+     * @return {Number} length.
+     */
     LinkedListViewSequence.prototype.getLength = function() {
         return this._.length;
     };
 
+    /**
+     * Removes all items.
+     *
+     * @return {LinkedListViewSequence} Last remaining view-sequence node.
+     */
     LinkedListViewSequence.prototype.clear = function() {
         var sequence = this; //eslint-disable-line consistent-this
         while (this._.length) {
           sequence = sequence.remove(this._.tail);
         }
+        //sequence.verifyIntegrity();
         return sequence;
     };
 
+    /**
+     * Inserts an item at the beginning of the view-sequence.
+     *
+     * @param {Renderable} renderNode Renderable to insert.
+     * @return {LinkedListViewSequence} newly inserted view-sequence node.
+     */
     LinkedListViewSequence.prototype.unshift = function(renderNode) {
         return this.insert(0, renderNode);
     };
 
+    /**
+     * Inserts an item at the end of the view-sequence.
+     *
+     * @param {Renderable} renderNode Renderable to insert.
+     * @return {LinkedListViewSequence} newly inserted view-sequence node.
+     */
     LinkedListViewSequence.prototype.push = function(renderNode) {
         return this.insert(-1, renderNode);
     };
@@ -327,6 +390,13 @@ define(function(require, exports, module) {
         }
     };
 
+    /**
+     * Swaps the values of two view-sequence nodes.
+     *
+     * @param {Number} index Index of the first item to swap.
+     * @param {Number} index2 Index of item to swap with.
+     * @return {LinkedListViewSequence} this
+     */
     LinkedListViewSequence.prototype.swap = function(index, index2) {
         var sequence1 = this.findByIndex(index);
         if (!sequence1) {
@@ -339,6 +409,7 @@ define(function(require, exports, module) {
         var swap = sequence1._value;
         sequence1._value = sequence2._value;
         sequence2._value = swap;
+        //this.verifyIntegrity();
         return this;
     };
 

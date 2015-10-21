@@ -54,6 +54,7 @@ module.exports = function(grunt) {
             { src: 'src/FlexScrollView.js', dest: 'docs/FlexScrollView.md' },
             { src: 'src/LayoutUtility.js', dest: 'docs/LayoutUtility.md' },
             { src: 'src/VirtualViewSequence.js', dest: 'docs/VirtualViewSequence.md' },
+            { src: 'src/LinkedListViewSequence.js', dest: 'docs/LinkedListViewSequence.md' },
             { src: 'src/AnimationController.js', dest: 'docs/AnimationController.md' },
             { src: 'src/ViewController.js', dest: 'docs/ViewController.md' },
             { src: 'src/LinkedListViewSequence.js', dest: 'docs/LinkedListViewSequence.md' },
@@ -70,6 +71,7 @@ module.exports = function(grunt) {
             { src: 'src/layouts/HeaderFooterLayout.js', dest: 'docs/layouts/HeaderFooterLayout.md' },
             { src: 'src/layouts/NavBarLayout.js', dest: 'docs/layouts/NavBarLayout.md' },
             { src: 'src/layouts/WheelLayout.js', dest: 'docs/layouts/WheelLayout.md' },
+            { src: 'src/layouts/CoverLayout.js', dest: 'docs/layouts/CoverLayout.md' },
             { src: 'src/layouts/ProportionalLayout.js', dest: 'docs/layouts/ProportionalLayout.md' },
             { src: 'src/layouts/TabBarLayout.js', dest: 'docs/layouts/TabBarLayout.md' },
             // views

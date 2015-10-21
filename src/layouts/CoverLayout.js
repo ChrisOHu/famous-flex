@@ -5,18 +5,18 @@
  *
  * @author: Hein Rutjes (IjzerenHein)
  * @license MIT
- * @copyright Gloey Apps, 2014
+ * @copyright Gloey Apps, 2015
  */
 
 /**
- * Lays a collection of renderables from left to right, and when the right edge is reached,
- * continues at the left of the next line.
+ * Lays out renderables in scrollable coverflow.
  *
  * |options|type|description|
  * |---|---|---|
  * |`itemSize`|Size|Size of an item to layout|
- * |`[gutter]`|Size|Gutter-space between renderables|
- *
+ * |`zOffset`|Size|Z-space offset for all the renderables except the current 'selected' renderable|
+ * |`itemAngle`|Angle|Angle of the renderables, in radians|
+ * |`[radialOpacity]`|Number|Opacity (0..1) at the edges of the layout (default: 1).|
  * Example:
  *
  * ```javascript
@@ -25,9 +25,10 @@
  * new LayoutController({
  *   layout: CoverLayout,
  *   layoutOptions: {
- *     itemSize: [100, 100],  // item has width and height of 100 pixels
- *     gutter: [5, 5],        // gutter of 5 pixels in between cells
- *     justify: true          // justify the items neatly across the whole width and height
+ *        itemSize: 400,
+ *        zOffset: 400,      // z-space offset for all the renderables except the current 'selected' renderable
+ *        itemAngle: 0.78,   // Angle of the renderables, in radians
+ *        radialOpacity: 1   // make items at the edges more transparent
  *   },
  *   dataSource: [
  *     new Surface({content: 'item 1'}),
@@ -46,93 +47,114 @@ define(function(require, exports, module) {
     // Define capabilities of this layout function
     var capabilities = {
         sequence: true,
-        direction: [Utility.Direction.X, Utility.Direction.Y],
+        direction: [Utility.Direction.Y, Utility.Direction.X],
         scrolling: true,
+        trueSize: true,
         sequentialScrollingOptimized: false
     };
 
+    // Data
+    var size;
+    var direction;
+    var revDirection;
+    var node;
+    var itemSize;
+    var offset;
+    var bound;
+    var angle;
+    var itemAngle;
+    var radialOpacity;
+    var zOffset;
+    var set = {
+        opacity: 1,
+        size: [0, 0],
+        translate: [0, 0, 0],
+        rotate: [0, 0, 0],
+        origin: [0.5, 0.5],
+        align: [0.5, 0.5],
+        scrollLength: undefined
+    };
+
+    /**
+     * CoverLayout
+     */
     function CoverLayout(context, options) {
 
-        // Get first renderable
-        var node = context.next();
-        if (!node) {
-            return;
-        }
-
+        //
         // Prepare
-        var size = context.size;
-        var direction = context.direction;
-        var itemSize = options.itemSize;
-        var opacityStep = 0.2;
-        var scaleStep = 0.1;
-        var translateStep = 30;
-        var zStart = 100;
+        //
+        size = context.size;
+        zOffset = options.zOffset;
+        itemAngle = options.itemAngle;
+        direction = context.direction;
+        revDirection = direction ? 0 : 1;
+        itemSize = options.itemSize || (size[direction] / 2);
+        radialOpacity = (options.radialOpacity === undefined) ? 1 : options.radialOpacity;
 
-        // Layout the first renderable in the center
-        context.set(node, {
-            size: itemSize,
-            origin: [0.5, 0.5],
-            align: [0.5, 0.5],
-            translate: [0, 0, zStart],
-            scrollLength: itemSize[direction]
-        });
+        //
+        // reset size & translation
+        //
+        set.opacity = 1;
+        set.size[0] = size[0];
+        set.size[1] = size[1];
+        set.size[revDirection] = itemSize;
+        set.size[direction] = itemSize;
+        set.translate[0] = 0;
+        set.translate[1] = 0;
+        set.translate[2] = 0;
+        set.rotate[0] = 0;
+        set.rotate[1] = 0;
+        set.rotate[2] = 0;
+        set.scrollLength = itemSize;
 
-        // Layout renderables
-        var translate = itemSize[0] / 2;
-        var opacity = 1 - opacityStep;
-        var zIndex = zStart - 1;
-        var scale = 1 - scaleStep;
-        var prev = false;
-        var endReached = false;
-        node = context.next();
-        if (!node) {
-            node = context.prev();
-            prev = true;
+        //
+        // process next nodes
+        //
+        offset = context.scrollOffset;
+        bound = (((Math.PI / 2) / itemAngle) * itemSize) + itemSize;
+        while (offset <= bound) {
+            node = context.next();
+            if (!node) {
+                break;
+            }
+            if (offset >= -bound) {
+                set.translate[direction] = offset;
+                set.translate[2] = Math.abs(offset) > itemSize ? -zOffset : -(Math.abs(offset) * (zOffset / itemSize));
+                set.rotate[revDirection] = Math.abs(offset) > itemSize ? itemAngle : (Math.abs(offset) * (itemAngle / itemSize));
+                if (((offset > 0) && !direction) || ((offset < 0) && direction)) {
+                    set.rotate[revDirection] = 0 - set.rotate[revDirection];
+                }
+                set.opacity = 1 - ((Math.abs(angle) / (Math.PI / 2)) * (1 - radialOpacity));
+                context.set(node, set);
+            }
+            offset += itemSize;
         }
-        while (node) {
 
-            // Layout next node
-            context.set(node, {
-                size: itemSize,
-                origin: [0.5, 0.5],
-                align: [0.5, 0.5],
-                translate: direction ? [0, prev ? -translate : translate, zIndex] : [prev ? -translate : translate, 0, zIndex],
-                scale: [scale, scale, 1],
-                opacity: opacity,
-                scrollLength: itemSize[direction]
-            });
-            opacity -= opacityStep;
-            scale -= scaleStep;
-            translate += translateStep;
-            zIndex--;
-
-            // Check if the end is reached
-            if (translate >= (size[direction]/2)) {
-                endReached = true;
+        //
+        // process previous nodes
+        //
+        offset = context.scrollOffset - itemSize;
+        while (offset >= -bound) {
+            node = context.prev();
+            if (!node) {
+                break;
             }
-            else {
-                node = prev ? context.prev() : context.next();
-                endReached = !node;
-            }
-
-            // When end is reached for next, start processing prev
-            if (endReached) {
-                if (prev) {
-                    break;
+            if (offset <= bound) {
+                set.translate[direction] = offset;
+                set.translate[2] = Math.abs(offset) > itemSize ? -zOffset : -(Math.abs(offset) * (zOffset / itemSize));
+                set.rotate[revDirection] = Math.abs(offset) > itemSize ? itemAngle : (Math.abs(offset) * (itemAngle / itemSize));
+                if (((offset > 0) && !direction) || ((offset < 0) && direction)) {
+                    set.rotate[revDirection] = 0 - set.rotate[revDirection];
                 }
-                endReached = false;
-                prev = true;
-                node = context.prev();
-                if (node) {
-                    translate = (itemSize[direction] / 2);
-                    opacity = 1 - opacityStep;
-                    zIndex = zStart - 1;
-                    scale = 1 - scaleStep;
-                }
+                set.opacity = 1 - ((Math.abs(angle) / (Math.PI / 2)) * (1 - radialOpacity));
+                context.set(node, set);
             }
+            offset -= itemSize;
         }
     }
 
     CoverLayout.Capabilities = capabilities;
+    CoverLayout.Name = 'CoverLayout';
+    CoverLayout.Description = 'CoverLayout';
     module.exports = CoverLayout;
 });
