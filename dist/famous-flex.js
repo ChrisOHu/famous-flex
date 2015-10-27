@@ -8,8 +8,8 @@
 * @copyright Gloey Apps, 2014/2015
 *
 * @library famous-flex
-* @version 0.3.5
-* @generated 05-10-2015
+* @version 0.3.6
+* @generated 27-10-2015
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -314,19 +314,20 @@ define('famous-flex/LayoutUtility',['require','exports','module','famous/utiliti
 /*global console*/
 /*eslint no-console:0 */
 
-function assert(value, message) {
-    if (!value) {
-        //debugger;
-        throw new Error(message);
-    }
-}
-
 /**
- * Own implementation of ViewSequence which doesn't suck
+ * Linked-list based implementation of a view-sequence which fixes
+ * several issues in the stock famo.us ViewSequence.
  *
  * @module
  */
 define('famous-flex/LinkedListViewSequence',['require','exports','module'],function(require, exports, module) {
+
+    function assert(value, message) {
+        if (!value) {
+            //debugger;
+            throw new Error(message);
+        }
+    }
 
     /**
      * @class
@@ -345,11 +346,31 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
         }
     }
 
-     LinkedListViewSequence.Backing = function Backing() {
+    LinkedListViewSequence.Backing = function Backing() {
         this.length = 0;
         //this.head = undefined;
         //this.tail = undefined;
     };
+
+    /*LinkedListViewSequence.prototype.verifyIntegrity = function() {
+        var item = this._.head;
+        var count = 0;
+        while (item) {
+          assert(item._value, 'no rendernode at index: ' + count);
+          count++;
+          assert(count <= this._.length, 'head -> tail, node-count exceeds length: ' + count + ' > ' + this._.length);
+          item = item._next;
+        }
+        assert(count === this._.length, 'head -> tail, different count: ' + count + ' != ' + this._.length);
+        item = this._.tail;
+        count = 0;
+        while (item) {
+          count++;
+          assert(count <= this._.length, 'tail -> head, node-count exceeds length: ' + count + ' > ' + this._.length);
+          item = item._prev;
+        }
+        assert(count === this._.length, 'tail -> head, different count: ' + count + ' != ' + this._.length);
+    };*/
 
     /**
      * Get head node.
@@ -400,6 +421,7 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
      * Sets the value of this node.
      *
      * @param {Renderable} value surface/view
+     * @return {LinkedListViewSequence} this
      */
     LinkedListViewSequence.prototype.set = function(value) {
         this._value = value;
@@ -425,8 +447,9 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
     };
 
     /**
-     * Gets the index of a given render-node.
+     * Finds the index of a given render-node.
      *
+     * @param {Renderable} item Render-node to find.
      * @return {Number} Index or -1 when not found.
      */
     LinkedListViewSequence.prototype.indexOf = function(item) {
@@ -443,7 +466,10 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
     };
 
     /**
-     * Gets the view-sequence item at the given index.
+     * Finds the view-sequence item at the given index.
+     *
+     * @param {Number} index 0-based index.
+     * @return {LinkedListViewSequence} View-sequence node or undefined.
      */
     LinkedListViewSequence.prototype.findByIndex = function(index) {
         index = (index === -1) ? (this._.length - 1) : index;
@@ -476,7 +502,10 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
     };
 
     /**
-     * Gets the view-sequence item at the given index.
+     * Finds the view-sequence node by the given renderable.
+     *
+     * @param {Renderable} value Render-node to search for.
+     * @return {LinkedListViewSequence} View-sequence node or undefined.
      */
     LinkedListViewSequence.prototype.findByValue = function(value) {
         var sequence = this._.head;
@@ -490,9 +519,11 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
     };
 
     /**
-     * Pushes an item to the end of the view-sequence.
+     * Inserts an item into the view-sequence.
      *
-     * @return {LinkedListViewSequence} view-sequence node
+     * @param {Number} index 0-based index (-1 inserts at the tail).
+     * @param {Renderable} renderNode Renderable to insert.
+     * @return {LinkedListViewSequence} newly inserted view-sequence node.
      */
     LinkedListViewSequence.prototype.insert = function(index, renderNode) {
         index = (index === -1) ? this._.length : index;
@@ -505,6 +536,7 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
             this._.head = this;
             this._.tail = this;
             this._.length = 1;
+            //this.verifyIntegrity();
             return this;
         }
         var sequence;
@@ -549,12 +581,14 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
             }
             // insert after searchSequence
             sequence = new LinkedListViewSequence(this._);
+            sequence._value = renderNode;
             sequence._prev = searchSequence;
             sequence._next = searchSequence._next;
             searchSequence._next._prev = sequence;
             searchSequence._next = sequence;
         }
         this._.length++;
+        //this.verifyIntegrity();
         return sequence;
     };
 
@@ -571,8 +605,8 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
         if (sequence._prev && sequence._next) {
             sequence._prev._next = sequence._next;
             sequence._next._prev = sequence._prev;
-            this._value = undefined;
             this._.length--;
+            //this.verifyIntegrity();
             return (sequence === this) ? sequence._prev : this;
         }
         else if (!sequence._prev && !sequence._next) {
@@ -583,8 +617,9 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
             assert(this._.length === 1, 'length should be 1');
             this._value = undefined;
             this._.head = undefined;
-            this._.prev = undefined;
+            this._.tail = undefined;
             this._.length--;
+            //this.verifyIntegrity();
             return this;
         }
         else if (!sequence._prev) {
@@ -592,6 +627,7 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
             sequence._next._prev = undefined;
             this._.head = sequence._next;
             this._.length--;
+            //this.verifyIntegrity();
             return (sequence === this) ? this._.head : this;
         }
         else {
@@ -600,26 +636,50 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
             sequence._prev._next = undefined;
             this._.tail = sequence._prev;
             this._.length--;
+            //this.verifyIntegrity();
             return (sequence === this) ? this._.tail : this;
         }
     };
 
+    /**
+     * Gets the number of items in the view-sequence.
+     *
+     * @return {Number} length.
+     */
     LinkedListViewSequence.prototype.getLength = function() {
         return this._.length;
     };
 
+    /**
+     * Removes all items.
+     *
+     * @return {LinkedListViewSequence} Last remaining view-sequence node.
+     */
     LinkedListViewSequence.prototype.clear = function() {
         var sequence = this; //eslint-disable-line consistent-this
         while (this._.length) {
           sequence = sequence.remove(this._.tail);
         }
+        //sequence.verifyIntegrity();
         return sequence;
     };
 
+    /**
+     * Inserts an item at the beginning of the view-sequence.
+     *
+     * @param {Renderable} renderNode Renderable to insert.
+     * @return {LinkedListViewSequence} newly inserted view-sequence node.
+     */
     LinkedListViewSequence.prototype.unshift = function(renderNode) {
         return this.insert(0, renderNode);
     };
 
+    /**
+     * Inserts an item at the end of the view-sequence.
+     *
+     * @param {Renderable} renderNode Renderable to insert.
+     * @return {LinkedListViewSequence} newly inserted view-sequence node.
+     */
     LinkedListViewSequence.prototype.push = function(renderNode) {
         return this.insert(-1, renderNode);
     };
@@ -630,6 +690,13 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
         }
     };
 
+    /**
+     * Swaps the values of two view-sequence nodes.
+     *
+     * @param {Number} index Index of the first item to swap.
+     * @param {Number} index2 Index of item to swap with.
+     * @return {LinkedListViewSequence} this
+     */
     LinkedListViewSequence.prototype.swap = function(index, index2) {
         var sequence1 = this.findByIndex(index);
         if (!sequence1) {
@@ -642,6 +709,7 @@ define('famous-flex/LinkedListViewSequence',['require','exports','module'],funct
         var swap = sequence1._value;
         sequence1._value = sequence2._value;
         sequence2._value = swap;
+        //this.verifyIntegrity();
         return this;
     };
 
@@ -4431,6 +4499,9 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
             this._scroll.particleValue = position;
             this._scroll.particle.setPosition1D(position);
             //_log.call(this, 'setParticle.position: ', position, ' (old: ', oldPosition, ', delta: ', position - oldPosition, ', phase: ', phase, ')');
+            if (this._scroll.springValue !== undefined) {
+                this._scroll.pe.wake();
+            }
         }
         if (velocity !== undefined) {
             var oldVelocity = this._scroll.particle.getVelocity1D();
@@ -4704,7 +4775,6 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
         if (this._scroll.scrollToDirection) {
             this._scroll.springPosition = scrollOffset - size[this._direction];
             this._scroll.springSource = SpringSource.GOTONEXTDIRECTION;
-
         }
         else {
             this._scroll.springPosition = scrollOffset + size[this._direction];
@@ -4783,8 +4853,10 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
                     normalizeNextPrev = (scrollOffset >= 0);
                 }
                 else {
-                    this._viewSequence = node._viewSequence;
-                    normalizedScrollOffset = scrollOffset;
+                    if (Math.round(scrollOffset) >= 0) {
+                        this._viewSequence = node._viewSequence;
+                        normalizedScrollOffset = scrollOffset;
+                    }
                 }
             }
             node = node._prev;
@@ -4797,7 +4869,7 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
         var node = this._nodes.getStartEnumNode(true);
         while (node) {
             if (!node._invalidated || (node.scrollLength === undefined) || node.trueSizeRequested || !node._viewSequence ||
-                ((scrollOffset > 0) && (!this.options.alignment || (node.scrollLength !== 0)))) {
+                ((Math.round(scrollOffset) > 0) && (!this.options.alignment || (node.scrollLength !== 0)))) {
                 break;
             }
             if (this.options.alignment) {
@@ -4858,7 +4930,7 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
             var particleValue = this._scroll.particle.getPosition1D();
             //var particleValue = this._scroll.particleValue;
             _setParticle.call(this, particleValue + delta, undefined, 'normalize');
-            //_log.call(this, 'normalized scrollOffset: ', normalizedScrollOffset, ', old: ', scrollOffset, ', particle: ', particleValue + delta);
+            //console.log('normalized scrollOffset: ', normalizedScrollOffset, ', old: ', scrollOffset, ', particle: ', particleValue + delta);
 
             // Adjust scroll spring
             if (this._scroll.springPosition !== undefined) {
@@ -5531,6 +5603,18 @@ define('famous-flex/ScrollController',['require','exports','module','./LayoutUti
         // Determine start & end
         var scrollStart = 0 - Math.max(this.options.extraBoundsSpace[0], 1);
         var scrollEnd = size[this._direction] + Math.max(this.options.extraBoundsSpace[1], 1);
+        if (this.options.paginated && (this.options.paginationMode === PaginationMode.PAGE)) {
+            scrollStart = scrollOffset - this.options.extraBoundsSpace[0];
+            scrollEnd = scrollOffset + size[this._direction] + this.options.extraBoundsSpace[1];
+            if ((scrollOffset + size[this._direction]) < 0) {
+                scrollStart += size[this._direction];
+                scrollEnd += size[this._direction];
+            }
+            else if ((scrollOffset - size[this._direction]) > 0) {
+                scrollStart -= size[this._direction];
+                scrollEnd -= size[this._direction];
+            }
+        }
         if (this.options.layoutAll) {
             scrollStart = -1000000;
             scrollEnd = 1000000;
@@ -10202,18 +10286,18 @@ define('famous-flex/layouts/CollectionLayout',['require','exports','module','fam
  *
  * @author: Hein Rutjes (IjzerenHein)
  * @license MIT
- * @copyright Gloey Apps, 2014
+ * @copyright Gloey Apps, 2015
  */
 
 /**
- * Lays a collection of renderables from left to right, and when the right edge is reached,
- * continues at the left of the next line.
+ * Lays out renderables in scrollable coverflow.
  *
  * |options|type|description|
  * |---|---|---|
  * |`itemSize`|Size|Size of an item to layout|
- * |`[gutter]`|Size|Gutter-space between renderables|
- *
+ * |`zOffset`|Size|Z-space offset for all the renderables except the current 'selected' renderable|
+ * |`itemAngle`|Angle|Angle of the renderables, in radians|
+ * |`[radialOpacity]`|Number|Opacity (0..1) at the edges of the layout (default: 1).|
  * Example:
  *
  * ```javascript
@@ -10222,9 +10306,10 @@ define('famous-flex/layouts/CollectionLayout',['require','exports','module','fam
  * new LayoutController({
  *   layout: CoverLayout,
  *   layoutOptions: {
- *     itemSize: [100, 100],  // item has width and height of 100 pixels
- *     gutter: [5, 5],        // gutter of 5 pixels in between cells
- *     justify: true          // justify the items neatly across the whole width and height
+ *        itemSize: 400,
+ *        zOffset: 400,      // z-space offset for all the renderables except the current 'selected' renderable
+ *        itemAngle: 0.78,   // Angle of the renderables, in radians
+ *        radialOpacity: 1   // make items at the edges more transparent
  *   },
  *   dataSource: [
  *     new Surface({content: 'item 1'}),
@@ -10243,94 +10328,115 @@ define('famous-flex/layouts/CoverLayout',['require','exports','module','famous/u
     // Define capabilities of this layout function
     var capabilities = {
         sequence: true,
-        direction: [Utility.Direction.X, Utility.Direction.Y],
+        direction: [Utility.Direction.Y, Utility.Direction.X],
         scrolling: true,
+        trueSize: true,
         sequentialScrollingOptimized: false
     };
 
+    // Data
+    var size;
+    var direction;
+    var revDirection;
+    var node;
+    var itemSize;
+    var offset;
+    var bound;
+    var angle;
+    var itemAngle;
+    var radialOpacity;
+    var zOffset;
+    var set = {
+        opacity: 1,
+        size: [0, 0],
+        translate: [0, 0, 0],
+        rotate: [0, 0, 0],
+        origin: [0.5, 0.5],
+        align: [0.5, 0.5],
+        scrollLength: undefined
+    };
+
+    /**
+     * CoverLayout
+     */
     function CoverLayout(context, options) {
 
-        // Get first renderable
-        var node = context.next();
-        if (!node) {
-            return;
-        }
-
+        //
         // Prepare
-        var size = context.size;
-        var direction = context.direction;
-        var itemSize = options.itemSize;
-        var opacityStep = 0.2;
-        var scaleStep = 0.1;
-        var translateStep = 30;
-        var zStart = 100;
+        //
+        size = context.size;
+        zOffset = options.zOffset;
+        itemAngle = options.itemAngle;
+        direction = context.direction;
+        revDirection = direction ? 0 : 1;
+        itemSize = options.itemSize || (size[direction] / 2);
+        radialOpacity = (options.radialOpacity === undefined) ? 1 : options.radialOpacity;
 
-        // Layout the first renderable in the center
-        context.set(node, {
-            size: itemSize,
-            origin: [0.5, 0.5],
-            align: [0.5, 0.5],
-            translate: [0, 0, zStart],
-            scrollLength: itemSize[direction]
-        });
+        //
+        // reset size & translation
+        //
+        set.opacity = 1;
+        set.size[0] = size[0];
+        set.size[1] = size[1];
+        set.size[revDirection] = itemSize;
+        set.size[direction] = itemSize;
+        set.translate[0] = 0;
+        set.translate[1] = 0;
+        set.translate[2] = 0;
+        set.rotate[0] = 0;
+        set.rotate[1] = 0;
+        set.rotate[2] = 0;
+        set.scrollLength = itemSize;
 
-        // Layout renderables
-        var translate = itemSize[0] / 2;
-        var opacity = 1 - opacityStep;
-        var zIndex = zStart - 1;
-        var scale = 1 - scaleStep;
-        var prev = false;
-        var endReached = false;
-        node = context.next();
-        if (!node) {
-            node = context.prev();
-            prev = true;
+        //
+        // process next nodes
+        //
+        offset = context.scrollOffset;
+        bound = (((Math.PI / 2) / itemAngle) * itemSize) + itemSize;
+        while (offset <= bound) {
+            node = context.next();
+            if (!node) {
+                break;
+            }
+            if (offset >= -bound) {
+                set.translate[direction] = offset;
+                set.translate[2] = Math.abs(offset) > itemSize ? -zOffset : -(Math.abs(offset) * (zOffset / itemSize));
+                set.rotate[revDirection] = Math.abs(offset) > itemSize ? itemAngle : (Math.abs(offset) * (itemAngle / itemSize));
+                if (((offset > 0) && !direction) || ((offset < 0) && direction)) {
+                    set.rotate[revDirection] = 0 - set.rotate[revDirection];
+                }
+                set.opacity = 1 - ((Math.abs(angle) / (Math.PI / 2)) * (1 - radialOpacity));
+                context.set(node, set);
+            }
+            offset += itemSize;
         }
-        while (node) {
 
-            // Layout next node
-            context.set(node, {
-                size: itemSize,
-                origin: [0.5, 0.5],
-                align: [0.5, 0.5],
-                translate: direction ? [0, prev ? -translate : translate, zIndex] : [prev ? -translate : translate, 0, zIndex],
-                scale: [scale, scale, 1],
-                opacity: opacity,
-                scrollLength: itemSize[direction]
-            });
-            opacity -= opacityStep;
-            scale -= scaleStep;
-            translate += translateStep;
-            zIndex--;
-
-            // Check if the end is reached
-            if (translate >= (size[direction]/2)) {
-                endReached = true;
+        //
+        // process previous nodes
+        //
+        offset = context.scrollOffset - itemSize;
+        while (offset >= -bound) {
+            node = context.prev();
+            if (!node) {
+                break;
             }
-            else {
-                node = prev ? context.prev() : context.next();
-                endReached = !node;
-            }
-
-            // When end is reached for next, start processing prev
-            if (endReached) {
-                if (prev) {
-                    break;
+            if (offset <= bound) {
+                set.translate[direction] = offset;
+                set.translate[2] = Math.abs(offset) > itemSize ? -zOffset : -(Math.abs(offset) * (zOffset / itemSize));
+                set.rotate[revDirection] = Math.abs(offset) > itemSize ? itemAngle : (Math.abs(offset) * (itemAngle / itemSize));
+                if (((offset > 0) && !direction) || ((offset < 0) && direction)) {
+                    set.rotate[revDirection] = 0 - set.rotate[revDirection];
                 }
-                endReached = false;
-                prev = true;
-                node = context.prev();
-                if (node) {
-                    translate = (itemSize[direction] / 2);
-                    opacity = 1 - opacityStep;
-                    zIndex = zStart - 1;
-                    scale = 1 - scaleStep;
-                }
+                set.opacity = 1 - ((Math.abs(angle) / (Math.PI / 2)) * (1 - radialOpacity));
+                context.set(node, set);
             }
+            offset -= itemSize;
         }
     }
 
     CoverLayout.Capabilities = capabilities;
+    CoverLayout.Name = 'CoverLayout';
+    CoverLayout.Description = 'CoverLayout';
     module.exports = CoverLayout;
 });
 

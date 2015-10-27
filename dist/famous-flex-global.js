@@ -8,8 +8,8 @@
 * @copyright Gloey Apps, 2014/2015
 *
 * @library famous-flex
-* @version 0.3.5
-* @generated 05-10-2015
+* @version 0.3.6
+* @generated 27-10-2015
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -3051,6 +3051,11 @@ LayoutUtility.getRegisteredHelper = function (name) {
 module.exports = LayoutUtility;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],9:[function(require,module,exports){
+function assert(value, message) {
+    if (!value) {
+        throw new Error(message);
+    }
+}
 function LinkedListViewSequence(items) {
     if (Array.isArray(items)) {
         this._ = new this.constructor.Backing(this);
@@ -3178,6 +3183,7 @@ LinkedListViewSequence.prototype.insert = function (index, renderNode) {
             }
         }
         sequence = new LinkedListViewSequence(this._);
+        sequence._value = renderNode;
         sequence._prev = searchSequence;
         sequence._next = searchSequence._next;
         searchSequence._next._prev = sequence;
@@ -3190,7 +3196,6 @@ LinkedListViewSequence.prototype.remove = function (sequence) {
     if (sequence._prev && sequence._next) {
         sequence._prev._next = sequence._next;
         sequence._next._prev = sequence._prev;
-        this._value = undefined;
         this._.length--;
         return sequence === this ? sequence._prev : this;
     } else if (!sequence._prev && !sequence._next) {
@@ -3201,7 +3206,7 @@ LinkedListViewSequence.prototype.remove = function (sequence) {
         assert(this._.length === 1, 'length should be 1');
         this._value = undefined;
         this._.head = undefined;
-        this._.prev = undefined;
+        this._.tail = undefined;
         this._.length--;
         return this;
     } else if (!sequence._prev) {
@@ -3640,6 +3645,9 @@ function _setParticle(position, velocity, phase) {
     if (position !== undefined) {
         this._scroll.particleValue = position;
         this._scroll.particle.setPosition1D(position);
+        if (this._scroll.springValue !== undefined) {
+            this._scroll.pe.wake();
+        }
     }
     if (velocity !== undefined) {
         var oldVelocity = this._scroll.particle.getVelocity1D();
@@ -3908,8 +3916,10 @@ function _normalizePrevViewSequence(scrollOffset) {
             if (this.options.alignment) {
                 normalizeNextPrev = scrollOffset >= 0;
             } else {
-                this._viewSequence = node._viewSequence;
-                normalizedScrollOffset = scrollOffset;
+                if (Math.round(scrollOffset) >= 0) {
+                    this._viewSequence = node._viewSequence;
+                    normalizedScrollOffset = scrollOffset;
+                }
             }
         }
         node = node._prev;
@@ -3921,7 +3931,7 @@ function _normalizeNextViewSequence(scrollOffset) {
     var normalizedScrollOffset = scrollOffset;
     var node = this._nodes.getStartEnumNode(true);
     while (node) {
-        if (!node._invalidated || node.scrollLength === undefined || node.trueSizeRequested || !node._viewSequence || scrollOffset > 0 && (!this.options.alignment || node.scrollLength !== 0)) {
+        if (!node._invalidated || node.scrollLength === undefined || node.trueSizeRequested || !node._viewSequence || Math.round(scrollOffset) > 0 && (!this.options.alignment || node.scrollLength !== 0)) {
             break;
         }
         if (this.options.alignment) {
@@ -4385,6 +4395,17 @@ function _layout(size, scrollOffset, nested) {
     this._debug.layoutCount++;
     var scrollStart = 0 - Math.max(this.options.extraBoundsSpace[0], 1);
     var scrollEnd = size[this._direction] + Math.max(this.options.extraBoundsSpace[1], 1);
+    if (this.options.paginated && this.options.paginationMode === PaginationMode.PAGE) {
+        scrollStart = scrollOffset - this.options.extraBoundsSpace[0];
+        scrollEnd = scrollOffset + size[this._direction] + this.options.extraBoundsSpace[1];
+        if (scrollOffset + size[this._direction] < 0) {
+            scrollStart += size[this._direction];
+            scrollEnd += size[this._direction];
+        } else if (scrollOffset - size[this._direction] > 0) {
+            scrollStart -= size[this._direction];
+            scrollEnd -= size[this._direction];
+        }
+    }
     if (this.options.layoutAll) {
         scrollStart = -1000000;
         scrollEnd = 1000000;
@@ -5242,26 +5263,40 @@ var Utility = typeof window !== 'undefined' ? window['famous']['utilities']['Uti
 var capabilities = {
         sequence: true,
         direction: [
-            Utility.Direction.X,
-            Utility.Direction.Y
+            Utility.Direction.Y,
+            Utility.Direction.X
         ],
         scrolling: true,
+        trueSize: true,
         sequentialScrollingOptimized: false
     };
-function CoverLayout(context, options) {
-    var node = context.next();
-    if (!node) {
-        return;
-    }
-    var size = context.size;
-    var direction = context.direction;
-    var itemSize = options.itemSize;
-    var opacityStep = 0.2;
-    var scaleStep = 0.1;
-    var translateStep = 30;
-    var zStart = 100;
-    context.set(node, {
-        size: itemSize,
+var size;
+var direction;
+var revDirection;
+var node;
+var itemSize;
+var offset;
+var bound;
+var angle;
+var itemAngle;
+var radialOpacity;
+var zOffset;
+var set = {
+        opacity: 1,
+        size: [
+            0,
+            0
+        ],
+        translate: [
+            0,
+            0,
+            0
+        ],
+        rotate: [
+            0,
+            0,
+            0
+        ],
         origin: [
             0.5,
             0.5
@@ -5270,79 +5305,69 @@ function CoverLayout(context, options) {
             0.5,
             0.5
         ],
-        translate: [
-            0,
-            0,
-            zStart
-        ],
-        scrollLength: itemSize[direction]
-    });
-    var translate = itemSize[0] / 2;
-    var opacity = 1 - opacityStep;
-    var zIndex = zStart - 1;
-    var scale = 1 - scaleStep;
-    var prev = false;
-    var endReached = false;
-    node = context.next();
-    if (!node) {
-        node = context.prev();
-        prev = true;
+        scrollLength: undefined
+    };
+function CoverLayout(context, options) {
+    size = context.size;
+    zOffset = options.zOffset;
+    itemAngle = options.itemAngle;
+    direction = context.direction;
+    revDirection = direction ? 0 : 1;
+    itemSize = options.itemSize || size[direction] / 2;
+    radialOpacity = options.radialOpacity === undefined ? 1 : options.radialOpacity;
+    set.opacity = 1;
+    set.size[0] = size[0];
+    set.size[1] = size[1];
+    set.size[revDirection] = itemSize;
+    set.size[direction] = itemSize;
+    set.translate[0] = 0;
+    set.translate[1] = 0;
+    set.translate[2] = 0;
+    set.rotate[0] = 0;
+    set.rotate[1] = 0;
+    set.rotate[2] = 0;
+    set.scrollLength = itemSize;
+    offset = context.scrollOffset;
+    bound = Math.PI / 2 / itemAngle * itemSize + itemSize;
+    while (offset <= bound) {
+        node = context.next();
+        if (!node) {
+            break;
+        }
+        if (offset >= -bound) {
+            set.translate[direction] = offset;
+            set.translate[2] = Math.abs(offset) > itemSize ? -zOffset : -(Math.abs(offset) * (zOffset / itemSize));
+            set.rotate[revDirection] = Math.abs(offset) > itemSize ? itemAngle : Math.abs(offset) * (itemAngle / itemSize);
+            if (offset > 0 && !direction || offset < 0 && direction) {
+                set.rotate[revDirection] = 0 - set.rotate[revDirection];
+            }
+            set.opacity = 1 - Math.abs(angle) / (Math.PI / 2) * (1 - radialOpacity);
+            context.set(node, set);
+        }
+        offset += itemSize;
     }
-    while (node) {
-        context.set(node, {
-            size: itemSize,
-            origin: [
-                0.5,
-                0.5
-            ],
-            align: [
-                0.5,
-                0.5
-            ],
-            translate: direction ? [
-                0,
-                prev ? -translate : translate,
-                zIndex
-            ] : [
-                prev ? -translate : translate,
-                0,
-                zIndex
-            ],
-            scale: [
-                scale,
-                scale,
-                1
-            ],
-            opacity: opacity,
-            scrollLength: itemSize[direction]
-        });
-        opacity -= opacityStep;
-        scale -= scaleStep;
-        translate += translateStep;
-        zIndex--;
-        if (translate >= size[direction] / 2) {
-            endReached = true;
-        } else {
-            node = prev ? context.prev() : context.next();
-            endReached = !node;
+    offset = context.scrollOffset - itemSize;
+    while (offset >= -bound) {
+        node = context.prev();
+        if (!node) {
+            break;
         }
-        if (endReached) {
-            if (prev) {
-                break;
+        if (offset <= bound) {
+            set.translate[direction] = offset;
+            set.translate[2] = Math.abs(offset) > itemSize ? -zOffset : -(Math.abs(offset) * (zOffset / itemSize));
+            set.rotate[revDirection] = Math.abs(offset) > itemSize ? itemAngle : Math.abs(offset) * (itemAngle / itemSize);
+            if (offset > 0 && !direction || offset < 0 && direction) {
+                set.rotate[revDirection] = 0 - set.rotate[revDirection];
             }
-            endReached = false;
-            prev = true;
-            node = context.prev();
-            if (node) {
-                translate = itemSize[direction] / 2;
-                opacity = 1 - opacityStep;
-                zIndex = zStart - 1;
-                scale = 1 - scaleStep;
-            }
+            set.opacity = 1 - Math.abs(angle) / (Math.PI / 2) * (1 - radialOpacity);
+            context.set(node, set);
         }
+        offset -= itemSize;
     }
 }
 CoverLayout.Capabilities = capabilities;
+CoverLayout.Name = 'CoverLayout';
+CoverLayout.Description = 'CoverLayout';
 module.exports = CoverLayout;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],16:[function(require,module,exports){
