@@ -1043,5 +1043,19 @@ define(function(require, exports, module) {
         }
     };
 
+    /**
+     * Check Surface's true size by setting the '_trueSizeCheck' property to true of Surface.
+     *
+     * @return {LayoutController} this
+     */
+    LayoutController.prototype.checkSurfaceTrueSize = function(surfaceId) {
+        var surface = this.get(surfaceId);
+        if (surface) {
+            surface._trueSizeCheck = true;
+        }
+
+        return this;
+    };
+
     module.exports = LayoutController;
 });

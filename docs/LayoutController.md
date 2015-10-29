@@ -36,6 +36,7 @@ Events:
     * [.remove(indexOrId, [removeSpec])](#module_LayoutController--LayoutController+remove) ⇒ <code>Renderable</code>
     * [.removeAll([removeSpec])](#module_LayoutController--LayoutController+removeAll) ⇒ <code>LayoutController</code>
     * [.getSize()](#module_LayoutController--LayoutController+getSize) ⇒ <code>Array.Number</code>
+    * [.checkSurfaceTrueSize()](#module_LayoutController--LayoutController+checkSurfaceTrueSize) ⇒ <code>LayoutController</code>
 
 <a name="exp_module_LayoutController--LayoutController"></a>
 ### LayoutController ⏏
@@ -319,3 +320,9 @@ Return size of contained element or `undefined` when size is not defined.
 
 **Kind**: instance method of <code>[LayoutController](#exp_module_LayoutController--LayoutController)</code>  
 **Returns**: <code>Array.Number</code> - [width, height]  
+<a name="module_LayoutController--LayoutController+checkSurfaceTrueSize"></a>
+#### layoutController.checkSurfaceTrueSize() ⇒ <code>LayoutController</code>
+Check Surface's true size by setting the '_trueSizeCheck' property to true of Surface.
+
+**Kind**: instance method of <code>[LayoutController](#exp_module_LayoutController--LayoutController)</code>  
+**Returns**: <code>LayoutController</code> - this  
