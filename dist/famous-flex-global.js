@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 29-10-2015
+* @generated 29-12-2015
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -1618,6 +1618,7 @@ var LayoutNodeManager = require('./LayoutNodeManager');
 var LayoutNode = require('./LayoutNode');
 var FlowLayoutNode = require('./FlowLayoutNode');
 var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
+var Surface = typeof window !== 'undefined' ? window['famous']['core']['Surface'] : typeof global !== 'undefined' ? global['famous']['core']['Surface'] : null;
 require('./helpers/LayoutDockHelper');
 function LayoutController(options, nodeManager) {
     this.id = Entity.register(this);
@@ -1747,6 +1748,28 @@ function _forEachRenderable(callback) {
         }
     }
 }
+LayoutController.prototype.findRenderable = function (callback) {
+    if (this._nodesById) {
+        for (var key in this._nodesById) {
+            if (callback(key, this._nodesById[key])) {
+                return this;
+            }
+        }
+    } else {
+        var sequence = this._viewSequence.getHead();
+        while (sequence) {
+            var renderable = sequence.get();
+            var index = sequence.getIndex();
+            if (renderable) {
+                if (callback(index, renderable)) {
+                    return this;
+                }
+            }
+            sequence = sequence.getNext();
+        }
+    }
+    return this;
+};
 LayoutController.prototype.setDataSource = function (dataSource) {
     this._dataSource = dataSource;
     this._nodesById = undefined;
@@ -2198,10 +2221,12 @@ LayoutController.prototype.cleanup = function (context) {
         this._resetFlowState = true;
     }
 };
-LayoutController.prototype.checkSurfaceTrueSize = function (surfaceId) {
-    var surface = this.get(surfaceId);
-    if (surface) {
+LayoutController.prototype.checkSurfaceTrueSize = function (indexOrId) {
+    var surface = this.get(indexOrId);
+    if (surface && surface instanceof Surface) {
         surface._trueSizeCheck = true;
+    } else {
+        console.warn('Renderable[' + indexOrId + '] is not intanceof Surface');
     }
     return this;
 };

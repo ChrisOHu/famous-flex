@@ -16,6 +16,7 @@ Events:
   * [LayoutController](#exp_module_LayoutController--LayoutController) ⏏
     * [new LayoutController(options)](#new_module_LayoutController--LayoutController_new)
     * [.setOptions(options)](#module_LayoutController--LayoutController+setOptions) ⇒ <code>LayoutController</code>
+    * [.findRenderable(callback)](#module_LayoutController--LayoutController+findRenderable) ⇒ <code>LayoutController</code>
     * [.setDataSource(dataSource)](#module_LayoutController--LayoutController+setDataSource) ⇒ <code>LayoutController</code>
     * [.getDataSource()](#module_LayoutController--LayoutController+getDataSource) ⇒ <code>Array</code> &#124; <code>LinkedListViewSequence</code> &#124; <code>Object</code>
     * [.setLayout(layout, [options])](#module_LayoutController--LayoutController+setLayout) ⇒ <code>LayoutController</code>
@@ -36,7 +37,7 @@ Events:
     * [.remove(indexOrId, [removeSpec])](#module_LayoutController--LayoutController+remove) ⇒ <code>Renderable</code>
     * [.removeAll([removeSpec])](#module_LayoutController--LayoutController+removeAll) ⇒ <code>LayoutController</code>
     * [.getSize()](#module_LayoutController--LayoutController+getSize) ⇒ <code>Array.Number</code>
-    * [.checkSurfaceTrueSize()](#module_LayoutController--LayoutController+checkSurfaceTrueSize) ⇒ <code>LayoutController</code>
+    * [.checkSurfaceTrueSize(indexOrId)](#module_LayoutController--LayoutController+checkSurfaceTrueSize) ⇒ <code>LayoutController</code>
 
 <a name="exp_module_LayoutController--LayoutController"></a>
 ### LayoutController ⏏
@@ -83,6 +84,17 @@ Patches the LayoutController instance's options with the passed-in ones.
 | [options.flowOptions.insertSpec] | <code>Spec</code> | Size, transform, opacity... to use when inserting new renderables into the scene (default: `{}`). |
 | [options.flowOptions.removeSpec] | <code>Spec</code> | Size, transform, opacity... to use when removing renderables from the scene (default: `{}`). |
 | [options.alwaysLayout] | <code>Bool</code> | When set to true, always calls the layout function on every render-cycle (default: `false`). |
+
+<a name="module_LayoutController--LayoutController+findRenderable"></a>
+#### layoutController.findRenderable(callback) ⇒ <code>LayoutController</code>
+Find a specified renderable in the datasource
+
+**Kind**: instance method of <code>[LayoutController](#exp_module_LayoutController--LayoutController)</code>  
+**Returns**: <code>LayoutController</code> - this  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| callback | <code>function</code> | received indexOrId and Renderable as params, return true if found |
 
 <a name="module_LayoutController--LayoutController+setDataSource"></a>
 #### layoutController.setDataSource(dataSource) ⇒ <code>LayoutController</code>
@@ -321,8 +333,13 @@ Return size of contained element or `undefined` when size is not defined.
 **Kind**: instance method of <code>[LayoutController](#exp_module_LayoutController--LayoutController)</code>  
 **Returns**: <code>Array.Number</code> - [width, height]  
 <a name="module_LayoutController--LayoutController+checkSurfaceTrueSize"></a>
-#### layoutController.checkSurfaceTrueSize() ⇒ <code>LayoutController</code>
+#### layoutController.checkSurfaceTrueSize(indexOrId) ⇒ <code>LayoutController</code>
 Check Surface's true size by setting the '_trueSizeCheck' property to true of Surface.
 
 **Kind**: instance method of <code>[LayoutController](#exp_module_LayoutController--LayoutController)</code>  
 **Returns**: <code>LayoutController</code> - this  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| indexOrId | <code>Number</code> &#124; <code>String</code> | Index within dataSource array or id (String) |
+
