@@ -39,6 +39,7 @@ define(function(require, exports, module) {
     var LayoutNode = require('./LayoutNode');
     var FlowLayoutNode = require('./FlowLayoutNode');
     var Transform = require('famous/core/Transform');
+    var Surface = require('famous/core/Surface');
     require('./helpers/LayoutDockHelper');
 
     /**
@@ -275,6 +276,37 @@ define(function(require, exports, module) {
             }
         }
     }
+
+    /**
+     * Find a specified renderable in the datasource
+     *
+     * @param {Function} callback received indexOrId and Renderable as params, return true if found
+     * @return {LayoutController} this
+     */
+    LayoutController.prototype.findRenderable = function(callback) {
+        if (this._nodesById) {
+            for (var key in this._nodesById) {
+                if (callback(key, this._nodesById[key])) {
+                    return this;
+                }
+            }
+        }
+        else {
+            var sequence = this._viewSequence.getHead();
+            while (sequence) {
+                var renderable = sequence.get();
+                var index = sequence.getIndex();
+                if (renderable) {
+                    if (callback(index, renderable)) {
+                        return this;
+                    }
+                }
+                sequence = sequence.getNext();
+            }
+        }
+
+        return this;
+    };
 
     /**
      * Sets the collection of renderables which are layed out according to
@@ -1046,12 +1078,16 @@ define(function(require, exports, module) {
     /**
      * Check Surface's true size by setting the '_trueSizeCheck' property to true of Surface.
      *
+     * @param {Number|String} indexOrId Index within dataSource array or id (String)
+     *
      * @return {LayoutController} this
      */
-    LayoutController.prototype.checkSurfaceTrueSize = function(surfaceId) {
-        var surface = this.get(surfaceId);
-        if (surface) {
+    LayoutController.prototype.checkSurfaceTrueSize = function(indexOrId) {
+        var surface = this.get(indexOrId);
+        if (surface && surface instanceof Surface) {
             surface._trueSizeCheck = true;
+        } else {
+            console.warn('Renderable[' + indexOrId + '] is not intanceof Surface');
         }
 
         return this;
