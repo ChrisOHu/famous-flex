@@ -58,8 +58,6 @@ operations from the queue.
 | [options] | <code>Object</code> | Options. |
 | [options.transition] | <code>Object</code> | Transition options for both show & hide. |
 | [options.animation] | <code>function</code> | Animation function for both show & hide. |
-| [options.onShow] | <code>function</code> | function to call just before show. |
-| [options.onHide] | <code>function</code> | function to call just before hide. |
 | [options.wait] | <code>Promise</code> | A promise to wait for before running the animation. |
 | [options.show] | <code>Object</code> | Show specific options. |
 | [options.show.transition] | <code>Object</code> | Show specific transition options. |

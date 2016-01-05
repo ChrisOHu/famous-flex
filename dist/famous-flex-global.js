@@ -472,8 +472,6 @@ function _setItemOptions(item, options, callback) {
         item.options.transfer.items = (options.transfer ? options.transfer.items : undefined) || item.options.transfer.items;
         item.options.transfer.zIndex = options.transfer && options.transfer.zIndex !== undefined ? options.transfer.zIndex : item.options.transfer.zIndex;
         item.options.transfer.fastResize = options.transfer && options.transfer.fastResize !== undefined ? options.transfer.fastResize : item.options.transfer.fastResize;
-        item.options.onShow = options.onShow ? options.onShow : item.options.onShow;
-        item.options.onHide = options.onHide ? options.onHide : item.options.onHide;
     }
     item.showCallback = function () {
         item.showCallback = undefined;
@@ -520,23 +518,14 @@ function _updateState() {
             if (!prevItem || prevItem.state === ItemState.VISIBLE || prevItem.state === ItemState.HIDING) {
                 if (prevItem && prevItem.state === ItemState.VISIBLE) {
                     prevItem.state = ItemState.HIDE;
-                    if (prevItem.options.onHide) {
-                        prevItem.options.onHide();
-                    }
                     prevItem.wait = item.wait;
                 }
                 item.state = ItemState.SHOW;
-                if (item.options.onShow) {
-                    item.options.onShow();
-                }
                 invalidated = true;
             }
             break;
         } else if (item.state === ItemState.VISIBLE && item.hide) {
             item.state = ItemState.HIDE;
-            if (item.options.onHide) {
-                item.options.onHide();
-            }
         }
         if (item.state === ItemState.SHOW || item.state === ItemState.HIDE) {
             this.layout.reflowLayout();
@@ -650,6 +639,9 @@ AnimationController.prototype.hide = function (options, callback) {
         if (callback) {
             callback();
         }
+        this._viewStack[this._viewStack.length - 1].view = undefined;
+        this._renderables.views.splice(this._viewStack.length - 1, 1);
+        this._viewStack.splice(this._viewStack.length - 1, 1);
     }.bind(this);
     _updateState.call(this);
     return this;
