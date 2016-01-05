@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 29-12-2015
+* @generated 05-01-2016
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4631,6 +4631,7 @@ var StateModifier = typeof window !== 'undefined' ? window['famous']['modifiers'
 var Transform = typeof window !== 'undefined' ? window['famous']['core']['Transform'] : typeof global !== 'undefined' ? global['famous']['core']['Transform'] : null;
 function ViewController(options) {
     AnimationController.apply(this, arguments);
+    this.setOptions({ keepHiddenViewsInDOMCount: 7 });
     this._state = STATES.IDLE;
     this._trackingPointer = undefined;
     this._touchSync = new TouchSync({ direction: TouchSync.DIRECTION_X });
@@ -4653,6 +4654,15 @@ var STATES = {
         TRACKING: 2,
         FIRED: 3
     };
+ViewController.prototype.show = function (renderable, options) {
+    AnimationController.prototype.show.call(this, renderable, options, renderable.onRendered);
+    return this;
+};
+ViewController.prototype.hide = function (options) {
+    var item = this._viewStack[this._viewStack.length - 1];
+    AnimationController.prototype.hide.call(this, options, item.view.onHidden);
+    return this;
+};
 function _touchStart(event) {
     if (this._viewStack.length < 2) {
         return;

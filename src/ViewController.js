@@ -21,6 +21,9 @@ define(function(require, exports, module) {
      */
     function ViewController(options) {
         AnimationController.apply(this, arguments);
+        this.setOptions({
+            keepHiddenViewsInDOMCount: 7
+        });
 
         this._state = STATES.IDLE;
         this._trackingPointer = undefined;
@@ -47,6 +50,33 @@ define(function(require, exports, module) {
         STARTED  : 1,
         TRACKING : 2,
         FIRED    : 3
+    };
+
+    /**
+     * Show an renderable and call its onRendered callback on completion (if exists).
+     *
+     * @param {Renderable} renderable View or surface to show
+     * @param {Object} [options] Options, the same as AnimationController.show options.
+     * @return {ViewController} this
+     */
+    ViewController.prototype.show = function(renderable, options) {
+        AnimationController.prototype.show.call(this, renderable, options, renderable.onRendered);
+
+        return this;
+    };
+
+    /**
+     * Hide current renderable and call its onHidden callback on completion (if exists).
+     *
+     * @param {Renderable} renderable View or surface to show
+     * @param {Object} [options] Options, the same as AnimationController.hide options.
+     * @return {ViewController} this
+     */
+    ViewController.prototype.hide = function(options) {
+        var item = this._viewStack[this._viewStack.length - 1];
+        AnimationController.prototype.hide.call(this, options, item.view.onHidden);
+
+        return this;
     };
 
     function _touchStart(event) {
