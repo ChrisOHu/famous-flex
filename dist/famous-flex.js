@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 05-01-2016
+* @generated 07-01-2016
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -8156,13 +8156,33 @@ define('famous-flex/ViewController',['require','exports','module','./AnimationCo
     /**
      * Hide current renderable and call its onHidden callback on completion (if exists).
      *
-     * @param {Renderable} renderable View or surface to show
      * @param {Object} [options] Options, the same as AnimationController.hide options.
      * @return {ViewController} this
      */
     ViewController.prototype.hide = function(options) {
         var item = this._viewStack[this._viewStack.length - 1];
         AnimationController.prototype.hide.call(this, options, item.view.onHidden);
+
+        return this;
+    };
+
+    /**
+     * Remove target renderable from _viewStack
+     *
+     * @param {Renderable} renderable View or surface to show
+     * @return {ViewController} this
+     */
+    ViewController.prototype.removeFromStack = function(renderable) {
+        var index = this._viewStack.indexOf(renderable);
+        if (index >= 0) {
+            this._viewStack[index].view = undefined;
+            this._renderables.views.splice(index, 1);
+            this._viewStack.splice(index, 1);
+
+            if (renderable.onHidden) {
+                renderable.onHidden();
+            }
+        }
 
         return this;
     };

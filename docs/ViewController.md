@@ -7,7 +7,8 @@ Controller for views.
   * [ViewController](#exp_module_ViewController--ViewController) ⏏
     * [new ViewController([options])](#new_module_ViewController--ViewController_new)
     * [.show(renderable, [options])](#module_ViewController--ViewController+show) ⇒ <code>ViewController</code>
-    * [.hide(renderable, [options])](#module_ViewController--ViewController+hide) ⇒ <code>ViewController</code>
+    * [.hide([options])](#module_ViewController--ViewController+hide) ⇒ <code>ViewController</code>
+    * [.removeFromStack(renderable)](#module_ViewController--ViewController+removeFromStack) ⇒ <code>ViewController</code>
 
 <a name="exp_module_ViewController--ViewController"></a>
 ### ViewController ⏏
@@ -32,7 +33,7 @@ Show an renderable and call its onRendered callback on completion (if exists).
 | [options] | <code>Object</code> | Options, the same as AnimationController.show options. |
 
 <a name="module_ViewController--ViewController+hide"></a>
-#### viewController.hide(renderable, [options]) ⇒ <code>ViewController</code>
+#### viewController.hide([options]) ⇒ <code>ViewController</code>
 Hide current renderable and call its onHidden callback on completion (if exists).
 
 **Kind**: instance method of <code>[ViewController](#exp_module_ViewController--ViewController)</code>  
@@ -40,6 +41,16 @@ Hide current renderable and call its onHidden callback on completion (if exists)
 
 | Param | Type | Description |
 | --- | --- | --- |
-| renderable | <code>Renderable</code> | View or surface to show |
 | [options] | <code>Object</code> | Options, the same as AnimationController.hide options. |
+
+<a name="module_ViewController--ViewController+removeFromStack"></a>
+#### viewController.removeFromStack(renderable) ⇒ <code>ViewController</code>
+Remove target renderable from _viewStack
+
+**Kind**: instance method of <code>[ViewController](#exp_module_ViewController--ViewController)</code>  
+**Returns**: <code>ViewController</code> - this  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| renderable | <code>Renderable</code> | View or surface to show |
 
