@@ -8154,14 +8154,14 @@ define('famous-flex/ViewController',['require','exports','module','./AnimationCo
     };
 
     /**
-     * Hide current renderable and call its onHidden callback on completion (if exists).
+     * Hide current renderable and call its onRemoved callback on completion (if exists).
      *
      * @param {Object} [options] Options, the same as AnimationController.hide options.
      * @return {ViewController} this
      */
     ViewController.prototype.hide = function(options) {
         var item = this._viewStack[this._viewStack.length - 1];
-        AnimationController.prototype.hide.call(this, options, item.view.onHidden);
+        AnimationController.prototype.hide.call(this, options, item.view.onRemoved);
 
         return this;
     };
@@ -8179,8 +8179,8 @@ define('famous-flex/ViewController',['require','exports','module','./AnimationCo
             this._renderables.views.splice(index, 1);
             this._viewStack.splice(index, 1);
 
-            if (renderable.onHidden) {
-                renderable.onHidden();
+            if (renderable.onRemoved) {
+                renderable.onRemoved();
             }
         }
 

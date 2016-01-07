@@ -34,7 +34,7 @@ Show an renderable and call its onRendered callback on completion (if exists).
 
 <a name="module_ViewController--ViewController+hide"></a>
 #### viewController.hide([options]) ⇒ <code>ViewController</code>
-Hide current renderable and call its onHidden callback on completion (if exists).
+Hide current renderable and call its onRemoved callback on completion (if exists).
 
 **Kind**: instance method of <code>[ViewController](#exp_module_ViewController--ViewController)</code>  
 **Returns**: <code>ViewController</code> - this  

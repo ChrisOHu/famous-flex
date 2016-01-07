@@ -4652,7 +4652,7 @@ ViewController.prototype.show = function (renderable, options) {
 };
 ViewController.prototype.hide = function (options) {
     var item = this._viewStack[this._viewStack.length - 1];
-    AnimationController.prototype.hide.call(this, options, item.view.onHidden);
+    AnimationController.prototype.hide.call(this, options, item.view.onRemoved);
     return this;
 };
 ViewController.prototype.removeFromStack = function (renderable) {
@@ -4661,8 +4661,8 @@ ViewController.prototype.removeFromStack = function (renderable) {
         this._viewStack[index].view = undefined;
         this._renderables.views.splice(index, 1);
         this._viewStack.splice(index, 1);
-        if (renderable.onHidden) {
-            renderable.onHidden();
+        if (renderable.onRemoved) {
+            renderable.onRemoved();
         }
     }
     return this;
