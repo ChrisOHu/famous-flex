@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 07-01-2016
+* @generated 11-01-2016
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -644,6 +644,10 @@ AnimationController.prototype.hide = function (options, callback) {
         this._viewStack.splice(this._viewStack.length - 1, 1);
     }.bind(this);
     _updateState.call(this);
+    var nextShowItem = this._viewStack[this._viewStack.length - 2];
+    nextShowItem.state = ItemState.QUEUED;
+    nextShowItem.hide = false;
+    _setItemOptions.call(this, nextShowItem);
     return this;
 };
 AnimationController.prototype.halt = function (stopAnimation, framePerc) {

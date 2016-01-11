@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 07-01-2016
+* @generated 11-01-2016
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -7970,6 +7970,12 @@ define('famous-flex/AnimationController',['require','exports','module','famous/c
             this._viewStack.splice(this._viewStack.length - 1, 1);
         }.bind(this);
         _updateState.call(this);
+
+        var nextShowItem = this._viewStack[this._viewStack.length - 2];
+        nextShowItem.state = ItemState.QUEUED;
+        nextShowItem.hide = false;
+        _setItemOptions.call(this, nextShowItem);
+
         return this;
     };
 
