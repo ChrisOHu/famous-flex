@@ -801,6 +801,12 @@ define(function(require, exports, module) {
             this._viewStack.splice(this._viewStack.length - 1, 1);
         }.bind(this);
         _updateState.call(this);
+
+        var nextShowItem = this._viewStack[this._viewStack.length - 2];
+        nextShowItem.state = ItemState.QUEUED;
+        nextShowItem.hide = false;
+        _setItemOptions.call(this, nextShowItem);
+
         return this;
     };
 
