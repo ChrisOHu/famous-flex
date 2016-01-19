@@ -795,10 +795,13 @@ define(function(require, exports, module) {
                 callback();
             }
 
-            //Remove the top View from _viewStack, which should be this 'item'
-            this._viewStack[this._viewStack.length - 1].view = undefined;
-            this._renderables.views.splice(this._viewStack.length - 1, 1);
-            this._viewStack.splice(this._viewStack.length - 1, 1);
+            //Remove this view from _viewStack
+            var i = this._viewStack.lastIndexOf(item);
+            if (i >= 0) {
+                this._viewStack[i].view = undefined;
+                this._renderables.views.splice(i, 1);
+                this._viewStack.splice(i, 1);
+            }
         }.bind(this);
         _updateState.call(this);
 

@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 11-01-2016
+* @generated 19-01-2016
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -639,9 +639,12 @@ AnimationController.prototype.hide = function (options, callback) {
         if (callback) {
             callback();
         }
-        this._viewStack[this._viewStack.length - 1].view = undefined;
-        this._renderables.views.splice(this._viewStack.length - 1, 1);
-        this._viewStack.splice(this._viewStack.length - 1, 1);
+        var i = this._viewStack.lastIndexOf(item);
+        if (i >= 0) {
+            this._viewStack[i].view = undefined;
+            this._renderables.views.splice(i, 1);
+            this._viewStack.splice(i, 1);
+        }
     }.bind(this);
     _updateState.call(this);
     var nextShowItem = this._viewStack[this._viewStack.length - 2];
