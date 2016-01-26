@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 19-01-2016
+* @generated 26-01-2016
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -233,6 +233,9 @@ define('famous-flex/LayoutUtility',['require','exports','module','famous/utiliti
             return options2;
         }
         var options = Utility.clone(options1 || {});
+        if (forceClone) {
+            options2 = Utility.clone(options2 || {});
+        }
         if (options2) {
             for (var key in options2) {
                 options[key] = options2[key];

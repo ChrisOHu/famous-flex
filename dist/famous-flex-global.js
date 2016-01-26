@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 19-01-2016
+* @generated 26-01-2016
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -3057,6 +3057,9 @@ LayoutUtility.combineOptions = function (options1, options2, forceClone) {
         return options2;
     }
     var options = Utility.clone(options1 || {});
+    if (forceClone) {
+        options2 = Utility.clone(options2 || {});
+    }
     if (options2) {
         for (var key in options2) {
             options[key] = options2[key];

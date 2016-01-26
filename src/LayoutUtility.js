@@ -220,6 +220,9 @@ define(function(require, exports, module) {
             return options2;
         }
         var options = Utility.clone(options1 || {});
+        if (forceClone) {
+            options2 = Utility.clone(options2 || {});
+        }
         if (options2) {
             for (var key in options2) {
                 options[key] = options2[key];
