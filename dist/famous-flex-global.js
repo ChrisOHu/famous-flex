@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 26-01-2016
+* @generated 01-02-2016
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4666,7 +4666,13 @@ ViewController.prototype.hide = function (options) {
     return this;
 };
 ViewController.prototype.removeFromStack = function (renderable) {
-    var index = this._viewStack.indexOf(renderable);
+    var index = -1;
+    for (var i = 0; i < this._viewStack.length; i++) {
+        if (this._viewStack[i].view === renderable) {
+            index = i;
+            break;
+        }
+    }
     if (index >= 0) {
         this._viewStack[index].view = undefined;
         this._renderables.views.splice(index, 1);
@@ -4674,6 +4680,8 @@ ViewController.prototype.removeFromStack = function (renderable) {
         if (renderable.onRemoved) {
             renderable.onRemoved();
         }
+    } else {
+        throw new Error('could not find target renderable');
     }
     return this;
 };

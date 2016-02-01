@@ -85,7 +85,13 @@ define(function(require, exports, module) {
      * @return {ViewController} this
      */
     ViewController.prototype.removeFromStack = function(renderable) {
-        var index = this._viewStack.indexOf(renderable);
+        var index = -1;
+        for (var i = 0; i < this._viewStack.length; i++) {
+            if (this._viewStack[i].view === renderable) {
+                index = i;
+                break;
+            }
+        }
         if (index >= 0) {
             this._viewStack[index].view = undefined;
             this._renderables.views.splice(index, 1);
@@ -94,6 +100,8 @@ define(function(require, exports, module) {
             if (renderable.onRemoved) {
                 renderable.onRemoved();
             }
+        } else {
+            throw new Error('could not find target renderable');
         }
 
         return this;

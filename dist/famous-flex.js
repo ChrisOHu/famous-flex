@@ -9,7 +9,7 @@
 *
 * @library famous-flex
 * @version 0.3.6
-* @generated 26-01-2016
+* @generated 01-02-2016
 */
 /**
  * This Source Code is licensed under the MIT license. If a copy of the
@@ -8185,7 +8185,13 @@ define('famous-flex/ViewController',['require','exports','module','./AnimationCo
      * @return {ViewController} this
      */
     ViewController.prototype.removeFromStack = function(renderable) {
-        var index = this._viewStack.indexOf(renderable);
+        var index = -1;
+        for (var i = 0; i < this._viewStack.length; i++) {
+            if (this._viewStack[i].view === renderable) {
+                index = i;
+                break;
+            }
+        }
         if (index >= 0) {
             this._viewStack[index].view = undefined;
             this._renderables.views.splice(index, 1);
@@ -8194,6 +8200,8 @@ define('famous-flex/ViewController',['require','exports','module','./AnimationCo
             if (renderable.onRemoved) {
                 renderable.onRemoved();
             }
+        } else {
+            throw new Error('could not find target renderable');
         }
 
         return this;
